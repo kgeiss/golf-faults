@@ -780,7 +780,7 @@ function shotTableHTML(C, nf) {
   var NA = null;
   function sh(id, k) { var S = C[id].shots[k]; return S ? S.n : 0; }
   var tc = C.twochip.kinds, chip2 = (tc.chip ? tc.chip.n : 0) + (tc.unk ? tc.unk.n : 0), sand2 = tc.sand ? tc.sand.n : 0;
-  var cols = ['Pen', 'Rec', 'Appr', '2 chip', '3 putt'];
+  var cols = ['Pen', 'Rec', '≤150 yds', '2 chip', '3 putt'];
   var rows = [
     ['Tee', [sh('penalty', 'tee'), sh('recovery', 'tee'), NA, NA, NA]],
     ['App', [sh('penalty', 'app'), sh('recovery', 'app'), C.scoring.n, NA, NA]],
@@ -801,7 +801,7 @@ function shotTableHTML(C, nf) {
   }).join('');
   var foot = '<tr class="foot"><th scope="row">Total</th>' + colTot.map(function (v) { return '<td>' + v + '</td>'; }).join('') + '<td class="tot">' + grand + '</td></tr>';
   return '<div class="section"><div class="cap">By shot type</div><div class="card" style="padding:10px 8px"><table class="st"><caption class="sr">Faults by shot type and fault type</caption><thead><tr><th scope="col">Shot</th>' + cols.map(function (c) { return '<th scope="col">' + c + '</th>'; }).join('') + '<th scope="col">Total</th></tr></thead><tbody>' + body + foot + '</tbody></table></div>' +
-    '<div class="hint">Scoring approach counts as an App fault, Two chip as Chip or Sand (unmarked two chips count as Chip), and Three putt as Putt. Each row\u2019s % is its share of all faults.</div></div>';
+    '<div class="hint">Scoring approach (≤150 yds) counts as an App fault, Two chip as Chip or Sand (unmarked two chips count as Chip), and Three putt as Putt. Each row\u2019s % is its share of all faults.</div></div>';
 }
 function pieHTML(rows, total, id) {
   var cx = 70, cy = 70, R = 66, a0 = -Math.PI / 2, svg = '';

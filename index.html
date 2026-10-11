@@ -173,6 +173,26 @@ a{color:var(--green)}
 .lg .lc{grid-column:2 / 4;font-size:11px;color:var(--muted);margin-top:-2px}
 .lg.z{opacity:.45}
 .card .tip{font-size:12px;color:var(--muted);min-height:18px;margin-top:8px}
+.odiv{flex-basis:100%;height:1px;background:#E2CDBE;margin:2px 0}
+.g1,.g2,.g3{flex-basis:100%;display:grid;gap:6px}
+.g1{grid-template-columns:minmax(0,1fr)}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g1 .chip,.g2 .chip,.g3 .chip{padding:0 4px;white-space:nowrap}
+.tcard{background:#fff;border:1px solid var(--rule);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.thead{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.tname{font-weight:600;font-size:17px;display:flex;align-items:center;gap:8px}
+.tname .sw{width:10px;height:10px;border-radius:3px}
+.tcount{display:flex;align-items:baseline;gap:6px}
+.tcount .tsub{font-size:12px;color:var(--muted);text-align:right}
+.tcount .num{font-size:40px;line-height:1;color:var(--orange)}
+.tsect{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--rule2);padding-top:12px}
+.tsect.first{border-top:none;padding-top:0}
+.tsname{font-weight:600;font-size:15px}
+.pills{display:grid;gap:6px;font-size:12px;text-align:center}
+.pills span{padding:5px 0;border-radius:10px;background:var(--disabled);color:var(--faint)}
+.pills span.w{background:var(--orange-soft);color:var(--orange-ink);font-weight:600}
+.compass span.w{color:var(--orange)}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(110px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.18)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .spin{display:inline-block;width:16px;height:16px;border:2px solid var(--rule);border-top-color:var(--ink);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px}
@@ -188,40 +208,40 @@ a{color:var(--green)}
 'use strict';
 
 /* ---------------- constants ---------------- */
-var LS_KEY = 'faults.v1';
+var LS_KEY = 'faults.v2';
+var LS_KEY_OLD = 'faults.v1';
 var API = 'https://api.golfcourseapi.com/v1';
-var GIST_FILE = 'faults-data.json';
+var GIST_FILE = 'faults-data-v2.json';
 
-var MISS = { mode: 'pick', prompt: 'Where did it go wrong?', puttLink: true, items: [
-  { id: 'tee', label: 'Tee', dir: true, opts: [['pen', 'Penalty'], ['punch', 'Punch-out'], ['club', 'Wrong club']] },
-  { id: 'app', label: 'App', dir: true, opts: [['pen', 'Penalty'], ['short', 'Short-sided'], ['club', 'Wrong club']] },
-  { id: 'chip', label: 'Chip', dir: true, opts: [['chunk', 'Chunk'], ['thin', 'Thin']] },
-  { id: 'sand', label: 'Sand', dir: true, opts: [['chunk', 'Chunk'], ['thin', 'Thin']] }
-] };
-var PUTTS = { mode: 'sections', items: [
-  { id: 'first', label: '1st putt', single: true, opts: [['le20', '≤20 ft'], ['f21', '21–30 ft'], ['f31', '31–40 ft'], ['f40', '40+ ft']] },
-  { id: 'second', label: '2nd putt', single: true, opts: [['gt10', '>10 ft'], ['le10', '≤10 ft'], ['le5', '≤5 ft'], ['le3', '≤3 ft']] }
-] };
-var INSIDE = { mode: 'sections', items: [
-  { id: 'from', label: 'Started from', single: true, opts: [['d120', '121–140'], ['d100', '101–120'], ['d0', '≤100']] },  { id: 'why', label: 'What happened', opts: [['recovery', 'Bad tee', { dir: true }], ['missed', 'Missed green/fringe', { dir: true }], ['chip', 'Bad chip', { dir: true }], ['putts', 'Bad putt', { linkPutts: true }]] }
-] };
-var SAVE = { mode: 'pick', prompt: 'What missed?', items: [
-  { id: 'chip', label: 'Bad chip', dir: true },
-  { id: 'putt', label: 'Bad putt', dir: true }
-] };
-var FAULTS = [
-  { id: 'double', title: 'Double bogey or worse', short: 'Double+', tree: MISS },
-  { id: 'p5', title: 'Bogey or worse on a par 5', short: 'Bogey+ on par 5', tree: MISS },
-  { id: 'inside', title: 'Bogey or worse with scoring club', short: 'Bogey+ scoring club', tree: INSIDE },
-  { id: 'updown', title: 'Blown easy save', short: 'Blown easy save', tree: SAVE },
-  { id: 'putts', title: '3+ putts', short: '3+ putts', tree: PUTTS }
+var FTYPES = [
+  { id: 'penalty', label: 'Penalty', color: '#2a78d6' },
+  { id: 'recovery', label: 'Recovery', color: '#eb6834' },
+  { id: 'scoring', label: 'Scoring approach', color: '#1baf7a' },
+  { id: 'twochip', label: 'Two chip', color: '#eda100' },
+  { id: 'threeputt', label: 'Three putt', color: '#e87ba4' }
 ];
+var ROWS = [
+  { id: 'trouble', label: 'Penalty / Recovery', hint: 'A miss that cost a penalty or a recovery shot' },
+  { id: 'app150', label: 'Scoring approach', hint: 'Approach from 150 yds or closer' },
+  { id: 'twochip', label: 'Two chip', hint: 'Needed two chips to reach the green' },
+  { id: 'threeputt', label: 'Three putt', hint: '3 or more putts on the green' }
+];
+var SHOTS = [['tee', 'Tee'], ['app', 'App'], ['chip', 'Chip'], ['sand', 'Sand']];
+var TYPES = [['pen', 'Penalty'], ['rec', 'Recovery']];
+var SHAPES = [['pull', 'Pull'], ['push', 'Push'], ['thin', 'Thin'], ['hook', 'Hook'], ['slice', 'Slice'], ['fat', 'Fat']];
+var GREEN = [['hit', 'Hit'], ['miss', 'Missed']];
+var APP_DIST = [['d100', '≤100 yds'], ['d125', '101–125'], ['d126', '126–150']];
+var CHIP_KIND = [['chip', 'Chip'], ['sand', 'Sand']];
+var CHIP_DIST = [['le10', '≤10 yds'], ['g11', '11+ yds']];
+var CHIP_STRIKE = [['thin', 'Thin'], ['fat', 'Fat']];
+var PUTT_FIRST = [['le20', '≤20 ft'], ['f21', '21–30 ft'], ['f31', '31–40 ft'], ['f41', '41+ ft']];
 var DIRS = [
-  ['up', 'Up', 2, 1, 'M12 19V5M6 11l6-6 6 6'],
+  ['up', 'Long', 2, 1, 'M12 19V5M6 11l6-6 6 6'],
   ['left', 'Left', 1, 2, 'M19 12H5M11 6l-6 6 6 6'],
   ['right', 'Right', 3, 2, 'M5 12h14M13 6l6 6-6 6'],
-  ['down', 'Down', 2, 3, 'M12 5v14M6 13l6 6 6-6']
+  ['down', 'Short', 2, 3, 'M12 5v14M6 13l6 6 6-6']
 ];
+var DIRW = { up: 'long', down: 'short', left: 'left', right: 'right' };
 var SCORE_NAMES = { '-2': 'Eagle', '-1': 'Birdie', '0': 'Par', '1': 'Bogey', '2': 'Double bogey', '3': 'Triple bogey or worse' };
 
 /* ---------------- helpers ---------------- */
@@ -253,19 +273,32 @@ var ICON = {
 };
 
 /* ---------------- storage ---------------- */
-function blankDb() { return { v: 1, settings: { apiKey: '', gistToken: '', gistId: '', lastSync: null }, courses: {}, rounds: [], deleted: {}, activeId: null }; }
+function blankDb() { return { v: 2, settings: { apiKey: '', gistToken: '', gistId: '', lastSync: null }, courses: {}, rounds: [], deleted: {}, activeId: null }; }
+function normRound(r) {
+  if (!r || r.v !== 2 || !Array.isArray(r.holes)) return null;
+  r.holes.forEach(function (h) { h.on = h.on || {}; h.sel = h.sel || {}; });
+  return r;
+}
 function loadDb() {
+  var b = blankDb();
   try {
     var raw = localStorage.getItem(LS_KEY);
     if (raw) {
       var d = JSON.parse(raw);
-      var b = blankDb();
       d.settings = Object.assign(b.settings, d.settings || {});
-      d.courses = d.courses || {}; d.rounds = d.rounds || []; d.deleted = d.deleted || {};
+      d.courses = d.courses || {}; d.deleted = d.deleted || {};
+      d.rounds = (d.rounds || []).map(normRound).filter(Boolean);
       return d;
     }
+    // first run of v2: carry over settings and saved courses from v1, start rounds fresh
+    var old = localStorage.getItem(LS_KEY_OLD);
+    if (old) {
+      var o = JSON.parse(old);
+      b.settings = Object.assign(b.settings, o.settings || {}, { gistId: '', lastSync: null });
+      b.courses = o.courses || {};
+    }
   } catch (e) { /* fall through */ }
-  return blankDb();
+  return b;
 }
 var db = loadDb();
 var STORAGE_WARN = (function () {
@@ -282,84 +315,64 @@ function touch(r) { r.updatedAt = now(); save(); }
 function roundById(id) { for (var i = 0; i < db.rounds.length; i++) if (db.rounds[i].id === id) return db.rounds[i]; return null; }
 
 /* ---------------- hole logic ---------------- */
-function flags(h) {
-  var d = h.delta;
-  if (d == null) return {};
-  var bogey = d >= 1;
-  return {
-    double: d >= 2,
-    p5: bogey && (h.par != null ? h.par === 5 : !!h.f.p5),
-    inside: bogey && !!h.f.inside,
-    updown: !!h.f.updown,
-    putts: !!h.f.putts
-  };
-}
-function faultCount(h) { var f = flags(h), n = 0; FAULTS.forEach(function (x) { if (f[x.id]) n++; }); return n; }
-function linkedP5(h) { return h.p5Linked && flags(h).double; }
-function isOn(h, k) {
-  if (k.indexOf('p5.') === 0 && linkedP5(h)) return !!h.sel['double.' + k.slice(3)];
-  return !!h.sel[k];
-}
-function getVal(h, k) {
-  if (k.indexOf('p5.') === 0 && linkedP5(h)) return h.sel['double.' + k.slice(3)];
-  return h.sel[k];
-}
-function clearPrefix(sel, p) { Object.keys(sel).forEach(function (k) { if (k === p || k.indexOf(p + '.') === 0) delete sel[k]; }); }
-function materialize(h, k) {
-  if (k.indexOf('p5.') !== 0 || !linkedP5(h)) return;
-  clearPrefix(h.sel, 'p5');
-  Object.keys(h.sel).forEach(function (s) { if (s.indexOf('double.') === 0) h.sel['p5.' + s.slice(7)] = h.sel[s]; });
-  h.p5Linked = false;
-}
-function setDelta(h, v) {
-  var before = flags(h);
-  h.delta = v;
-  var after = flags(h);
-  FAULTS.forEach(function (x) {
-    if (before[x.id] && !after[x.id]) {
-      clearPrefix(h.sel, x.id);
-      if (x.id === 'p5' || x.id === 'inside') h.f[x.id] = false;
-      if (x.id === 'p5') h.p5Linked = false;
-    }
+// Counting rules: Penalty/Recovery once per shot (Tee/App/Chip/Sand) with a miss type picked;
+// Scoring approach only when Missed; Two chip and Three putt once per hole.
+function faults(h) {
+  var out = [];
+  if (!h || h.delta == null) return out;
+  var on = h.on || {}, s = h.sel || {};
+  if (on.trouble) SHOTS.forEach(function (sh) {
+    var t = s['trouble.' + sh[0]] && s['trouble.' + sh[0] + '.type'];
+    if (t) out.push({ type: t === 'pen' ? 'penalty' : 'recovery', shot: sh[0] });
   });
-  if (!before.p5 && after.p5) h.p5Linked = true;
-  syncSave(h);
+  if (on.app150 && s['app150.green'] === 'miss') out.push({ type: 'scoring' });
+  if (on.twochip) out.push({ type: 'twochip' });
+  if (on.threeputt) out.push({ type: 'threeputt' });
+  return out;
 }
-function toggleFault(h, id) {
-  h.f[id] = !h.f[id];
-  if (!h.f[id]) { clearPrefix(h.sel, id); if (id === 'p5') h.p5Linked = false; }
-  else if (id === 'p5') h.p5Linked = true;
-  if (id === 'updown') { h.updownAuto = false; h.mirChip = false; h.mirPutt = false; }
-  if (id === 'inside') syncSave(h);
-}
-function syncSave(h) {
-  var ins = !!flags(h).inside;
-  var chip = ins && !!h.sel['inside.why.chip'], putt = ins && !!h.sel['inside.why.putts'];
-  var prevChip = !!h.mirChip, prevPutt = !!h.mirPutt;
-  if ((chip || putt) && !h.f.updown) { h.f.updown = true; h.updownAuto = true; }
-  if (chip) {
-    h.sel['updown.chip'] = true;
-    clearPrefix(h.sel, 'updown.chip.dir');
-    DIRS.forEach(function (d) { if (h.sel['inside.why.chip.dir.' + d[0]]) h.sel['updown.chip.dir.' + d[0]] = true; });
-  } else if (prevChip) clearPrefix(h.sel, 'updown.chip');
-  if (putt) h.sel['updown.putt'] = true;
-  else if (prevPutt) clearPrefix(h.sel, 'updown.putt');
-  h.mirChip = chip; h.mirPutt = putt;
-  if (!chip && !putt && (prevChip || prevPutt) && h.updownAuto && !h.sel['updown.chip'] && !h.sel['updown.putt']) {
-    h.f.updown = false; h.updownAuto = false; clearPrefix(h.sel, 'updown');
-  }
-}
+function faultCount(h) { return faults(h).length; }
+function clearPrefix(sel, p) { Object.keys(sel).forEach(function (k) { if (k === p || k.indexOf(p + '.') === 0) delete sel[k]; }); }
+function dirsOf(h, k) { return DIRS.map(function (d) { return d[0]; }).filter(function (d) { return h.sel[k + '.dir.' + d]; }); }
 function visit(h) { if (h.delta == null) { h.delta = 0; } }
 function blankHole(n, th) {
-  return { n: n, par: th && th.par != null ? th.par : null, yards: th && th.yards != null ? th.yards : null, hcp: th && th.hcp != null ? th.hcp : null, delta: null, f: {}, sel: {}, p5Linked: false };
+  return { n: n, par: th && th.par != null ? th.par : null, yards: th && th.yards != null ? th.yards : null, hcp: th && th.hcp != null ? th.hcp : null, delta: null, on: {}, sel: {} };
 }
 function playedHoles(r) { return r.holes.filter(function (h) { return h.delta != null; }); }
 function roundStats(r) {
-  var ph = playedHoles(r), score = 0, faults = 0, faultHoles = 0;
-  ph.forEach(function (h) { score += h.delta; var c = faultCount(h); faults += c; if (c) faultHoles++; });
-  return { played: ph.length, score: score, faults: faults, faultHoles: faultHoles };
+  var ph = playedHoles(r), score = 0, nf = 0, faultHoles = 0;
+  ph.forEach(function (h) { score += h.delta; var c = faultCount(h); nf += c; if (c) faultHoles++; });
+  return { played: ph.length, score: score, faults: nf, faultHoles: faultHoles };
 }
 function sideLabel(s) { return s === 'front' ? 'Front 9' : s === 'back' ? 'Back 9' : '18 holes'; }
+function labelOf(list, id) { var o = list.filter(function (x) { return x[0] === id; })[0]; return o ? o[1] : ''; }
+function rowSummary(h, id) {
+  var s = h.sel, bits = [];
+  if (id === 'trouble') {
+    SHOTS.forEach(function (sh) {
+      var k = 'trouble.' + sh[0];
+      if (!s[k]) return;
+      var parts = [sh[1]];
+      var ds = dirsOf(h, k).map(function (d) { return DIRW[d]; });
+      if (ds.length) parts.push(ds.join('/'));
+      if (s[k + '.type']) parts.push(s[k + '.type'] === 'pen' ? 'penalty' : 'recovery');
+      var sh2 = SHAPES.filter(function (x) { return s[k + '.' + x[0]]; }).map(function (x) { return x[1].toLowerCase(); });
+      if (sh2.length) parts.push(sh2.join('/'));
+      bits.push(parts.join(' '));
+    });
+  } else if (id === 'app150') {
+    if (s['app150.green']) bits.push(labelOf(GREEN, s['app150.green']));
+    dirsOf(h, 'app150').forEach(function (d) { bits.push(DIRW[d]); });
+    if (s['app150.dist']) bits.push(labelOf(APP_DIST, s['app150.dist']));
+  } else if (id === 'twochip') {
+    if (s['twochip.kind']) bits.push(labelOf(CHIP_KIND, s['twochip.kind']));
+    dirsOf(h, 'twochip').forEach(function (d) { bits.push(DIRW[d]); });
+    CHIP_STRIKE.forEach(function (x) { if (s['twochip.' + x[0]]) bits.push(x[1].toLowerCase()); });
+    if (s['twochip.dist']) bits.push(labelOf(CHIP_DIST, s['twochip.dist']));
+  } else if (id === 'threeputt') {
+    if (s['threeputt.first']) bits.push('1st putt ' + labelOf(PUTT_FIRST, s['threeputt.first']));
+  }
+  return bits.join(' · ');
+}
 
 /* ---------------- course API ---------------- */
 function apiGet(path) {
@@ -505,67 +518,52 @@ function screenSetup() {
 
 /* ---------------- screens: hole ---------------- */
 function padHTML(h, k) {
-  return '<div class="pad" role="group" aria-label="Direction">' + DIRS.map(function (d) {
-    var on = isOn(h, k + '.dir.' + d[0]);
+  return '<div class="pad" role="group" aria-label="Miss direction">' + DIRS.map(function (d) {
+    var on = !!h.sel[k + '.dir.' + d[0]];
     return '<button class="' + (on ? 'on' : '') + '" style="grid-column:' + d[2] + ';grid-row:' + d[3] + '" data-act="sel" data-k="' + k + '.dir.' + d[0] + '" aria-label="' + d[1] + '" aria-pressed="' + on + '">' + svgArrow(d[4]) + '</button>';
   }).join('') + '<span class="pdot" style="grid-column:2;grid-row:2" aria-hidden="true"></span></div>';
 }
-function panelHTML(h, fid, tree, fl) {
+function oneChips(h, key, list) {
+  return list.map(function (o) {
+    var on = h.sel[key] === o[0];
+    return '<button class="chip' + (on ? ' on' : '') + '" data-act="one" data-k="' + key + '" data-v="' + o[0] + '" aria-pressed="' + on + '">' + esc(o[1]) + '</button>';
+  }).join('');
+}
+function multiChips(h, base, list) {
+  return list.map(function (o) {
+    var k = base + '.' + o[0], on = !!h.sel[k];
+    return '<button class="chip' + (on ? ' on' : '') + '" data-act="sel" data-k="' + k + '" aria-pressed="' + on + '">' + esc(o[1]) + '</button>';
+  }).join('');
+}
+function sect(title, body, first) { return '<div class="sect' + (first ? ' first' : '') + '"><div class="slabel">' + title + '</div>' + body + '</div>'; }
+var DIVIDER = '<span class="odiv" aria-hidden="true"></span>';
+function panelFor(h, id) {
   var out = '';
-  if (fid === 'p5' && linkedP5(h)) out += '<div class="note">Matching your double answers · tap any to change just this one</div>';
-  if (fid === 'updown' && (h.mirChip || h.mirPutt)) out += '<div class="note">Filled in from your scoring-club answers</div>';
-  if (tree.mode === 'pick') {
-    out += '<div class="grp"><div class="plabel">' + tree.prompt + '</div><div class="l1">';
-    tree.items.forEach(function (it) {
-      var k = fid + '.' + it.id, on = isOn(h, k);
-      out += '<button class="chip dark ' + (on ? 'on' : '') + '" data-act="sel" data-k="' + k + '" aria-pressed="' + on + '">' + it.label + '</button>';
+  if (id === 'trouble') {
+    out += '<div class="grp"><div class="plabel">Which shot?</div><div class="l1">' + SHOTS.map(function (sh) {
+      var k = 'trouble.' + sh[0], on = !!h.sel[k];
+      return '<button class="chip dark' + (on ? ' on' : '') + '" data-act="sel" data-k="' + k + '" aria-pressed="' + on + '">' + sh[1] + '</button>';
+    }).join('') + '</div></div>';
+    SHOTS.forEach(function (sh) {
+      var k = 'trouble.' + sh[0];
+      if (!h.sel[k]) return;
+      out += sect(sh[1] + ' · miss direction and type', '<div class="srow">' + padHTML(h, k) + '<div class="opts">' + oneChips(h, k + '.type', TYPES) + DIVIDER + '<div class="g3">' + multiChips(h, k, SHAPES) + '</div></div></div>');
     });
-    if (tree.puttLink && fl.putts) out += '<button class="chip linked" disabled aria-pressed="true" title="From 3+ putts">Putts</button>';
-    out += '</div></div>';
+  } else if (id === 'app150') {
+    out += sect('Miss direction, result and distance', '<div class="srow">' + padHTML(h, 'app150') + '<div class="opts">' + oneChips(h, 'app150.green', GREEN) + DIVIDER + '<div class="g1">' + oneChips(h, 'app150.dist', APP_DIST) + '</div></div></div>', true);
+  } else if (id === 'twochip') {
+    out += sect('Miss direction, shot, distance and strike', '<div class="srow">' + padHTML(h, 'twochip') + '<div class="opts">' + oneChips(h, 'twochip.kind', CHIP_KIND) + DIVIDER + '<div class="g2">' + oneChips(h, 'twochip.dist', CHIP_DIST) + '</div>' + DIVIDER + '<div class="g2">' + multiChips(h, 'twochip', CHIP_STRIKE) + '</div></div></div>', true);
+  } else if (id === 'threeputt') {
+    out += sect('1st putt', '<div class="opts">' + oneChips(h, 'threeputt.first', PUTT_FIRST) + '</div>', true);
   }
-  var first = tree.mode === 'sections';
-  tree.items.forEach(function (it) {
-    var k = fid + '.' + it.id;
-    if (tree.mode === 'pick' && !isOn(h, k)) return;
-    var opts = it.opts || [], body = '', extra = '';
-    if (it.dir) body += padHTML(h, k);
-    if (opts.length) {
-      body += '<div class="opts">' + opts.map(function (o) {
-        var of = o[2] || {};
-        if (of.linkPutts && fl.putts) return '<button class="chip linked" disabled aria-pressed="true">' + o[1] + ' · 3+ putts</button>';
-        var on = it.single ? getVal(h, k) === o[0] : isOn(h, k + '.' + o[0]);
-        var act = it.single ? 'data-act="one" data-k="' + k + '" data-v="' + o[0] + '"' : 'data-act="sel" data-k="' + k + '.' + o[0] + '"';
-        return '<button class="chip ' + (on ? 'on' : '') + '" ' + act + ' aria-pressed="' + on + '">' + esc(o[1]) + '</button>';
-      }).join('') + '</div>';
-      opts.forEach(function (o) {
-        var of = o[2] || {};
-        if (of.dir && isOn(h, k + '.' + o[0])) extra += '<div class="odir">' + padHTML(h, k + '.' + o[0]) + '<span class="slabel">' + o[1] + ' · direction</span></div>';
-      });
-    }
-    var title = it.dir && !opts.length ? it.label + ' · direction' : it.label;
-    out += '<div class="sect' + (first ? ' first' : '') + '"><div class="slabel">' + title + '</div><div class="srow">' + body + '</div>' + extra + '</div>';
-    first = false;
-  });
   return '<div class="panel">' + out + '</div>';
 }
-function faultHTML(h, def, fl) {
-  var on = !!fl[def.id], bogey = h.delta != null && h.delta >= 1, parKnown = h.par != null;
-  var auto = false, disabled = false, sub = '';
-  if (def.id === 'double') { auto = true; sub = 'Flagged from your score'; }
-  if (def.id === 'p5') {
-    if (parKnown) {
-      auto = h.par === 5; disabled = h.par !== 5;
-      sub = h.par === 5 ? (bogey ? 'Par 5 · flagged from your score' : 'Par 5 · flags on bogey or worse') : 'Not a par 5';
-    } else { disabled = !bogey; sub = bogey ? 'Tap if this hole is a par 5' : 'Only applies on bogey or worse'; }
-  }
-  if (def.id === 'inside') { disabled = !bogey; sub = bogey ? 'Approach from 140 yds or closer' : 'Only applies on bogey or worse'; }
-  if (def.id === 'updown') sub = 'Missed a simple up-and-down';
-  if (def.id === 'putts') sub = '3 or more putts on the green';
-  var locked = auto || disabled;
-  var s = '<div class="fault"><button class="frow' + (on ? ' on' : '') + '" ' + (locked ? 'disabled' : 'data-act="fault" data-f="' + def.id + '"') + ' aria-pressed="' + on + '">' +
-    '<span class="box">' + (on ? ICON.check : '') + '</span><span class="ftext"><span class="ft">' + def.title + '</span><span class="fs">' + sub + '</span></span>' +
-    (auto ? '<span class="pill green">AUTO</span>' : '') + '</button>';
-  if (on) s += panelHTML(h, def.id, def.tree, fl);
+function rowHTML(h, row) {
+  var on = !!h.on[row.id];
+  var sum = on ? rowSummary(h, row.id) : '';
+  var s = '<div class="fault"><button class="frow' + (on ? ' on' : '') + '" data-act="row" data-f="' + row.id + '" aria-pressed="' + on + '">' +
+    '<span class="box">' + (on ? ICON.check : '') + '</span><span class="ftext"><span class="ft">' + row.label + '</span><span class="fs">' + esc(sum || row.hint) + '</span></span></button>';
+  if (on) s += panelFor(h, row.id);
   return s + '</div>';
 }
 function screenHole() {
@@ -573,7 +571,7 @@ function screenHole() {
   if (!r) return screenHome();
   var i = r.cur || 0, h = r.holes[i];
   visit(h);
-  var fl = flags(h), cnt = faultCount(h);
+  var cnt = faultCount(h);
   var thru = 0, score = 0, tot = 0;
   r.holes.forEach(function (x, j) { if (x.delta != null && j !== i) { thru++; score += x.delta; } if (x.delta != null) tot += faultCount(x); });
   var out = '<header class="topbar"><button class="iconbtn" data-act="exitRound">' + ICON.back + 'Exit</button><div style="flex:1;min-width:0;text-align:center"><div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(r.courseName) + '</div><div class="hint">' + (thru ? '<strong style="color:var(--ink)">' + rel(score) + '</strong> thru ' + thru + ' · ' : '') + '<strong style="color:var(--orange)">' + tot + '</strong> fault' + (tot === 1 ? '' : 's') + '</div></div><button class="iconbtn" data-act="reset" aria-label="Reset hole to par and clear all faults">' + ICON.reset + 'Reset</button></header>';
@@ -590,7 +588,6 @@ function screenHole() {
   out += '<div class="section"><div class="cap">Score</div><div class="scores">' + [-2, -1, 0, 1, 2, 3].map(function (v) {
     var on = v === 3 ? d >= 3 : v === d;
     var lbl = v === 3 ? '3+' : v === 0 ? 'E' : String(v);
-    if (h.par != null && v !== 3) lbl = v === 0 ? 'E' : String(v);
     return '<button class="sbtn' + (on ? ' on' : '') + '" data-act="score" data-v="' + v + '" aria-label="' + SCORE_NAMES[String(v)] + (h.par != null ? ', ' + (v === 3 ? (h.par + 3) + ' or more' : (h.par + v)) + ' strokes' : '') + '" aria-pressed="' + on + '">' + lbl + '</button>';
   }).join('') + '</div>';
   if (d >= 3) {
@@ -600,8 +597,8 @@ function screenHole() {
     }).join('') + '</div></div>';
   }
   out += '</div>';
-  out += '<div class="section"><div class="row between"><div class="cap">Faults</div><div style="font-size:13px;font-weight:600;color:var(--orange)">' + (cnt === 0 ? 'Clean hole' : cnt === 1 ? '1 this hole' : cnt + ' this hole') + '</div></div>' +
-    FAULTS.map(function (def) { return faultHTML(h, def, fl); }).join('') + '</div>';
+  out += '<div class="section"><div class="row between"><div class="cap">Faults</div><div style="font-size:13px;font-weight:600;color:var(--orange)">' + (cnt === 0 ? 'Clean hole' : cnt === 1 ? '1 fault' : cnt + ' faults') + '</div></div>' +
+    ROWS.map(function (row) { return rowHTML(h, row); }).join('') + '</div>';
   var prev = r.holes[i - 1], next = r.holes[i + 1];
   out += '<nav class="navbar" aria-label="Holes"><div class="in"><button class="btn" data-act="prevHole"' + (prev ? '' : ' disabled') + ' aria-label="' + (prev ? 'Go to hole ' + prev.n : 'No previous hole') + '">' + ICON.back + (prev ? '#' + prev.n : '') + '</button>' +
     (next ? '<button class="btn primary" data-act="nextHole" aria-label="Go to hole ' + next.n + '">#' + next.n + ICON.next + '</button>' : '<button class="btn green" data-act="finish">Finish round</button>') + '</div></nav>';
@@ -645,9 +642,9 @@ function screenSummary() {
   if (view === 'insights') {
     h += playedHoles(r).length ? insightsBody([r], { round: true }) : '<div class="empty">No holes entered yet.</div>';
   } else {
-  h += '<div class="section"><div class="tiles"><div class="tile"><div class="k">Score to par</div><div class="v">' + (s.played ? rel(s.score) : '–') + '</div><div class="u">' + s.played + ' of ' + r.holes.length + ' holes' + (r.finished ? '' : ' · in progress') + '</div></div>' +
-    '<div class="tile warm"><div class="k">Faults</div><div class="v">' + s.faults + '</div><div class="u">on ' + s.faultHoles + ' hole' + (s.faultHoles === 1 ? '' : 's') + '</div></div></div></div>';
-  h += '<div class="section"><div class="cap">Scorecard</div>' + scorecardHTML(r) + '</div>';
+    h += '<div class="section"><div class="tiles"><div class="tile"><div class="k">Score to par</div><div class="v">' + (s.played ? rel(s.score) : '–') + '</div><div class="u">' + s.played + ' of ' + r.holes.length + ' holes' + (r.finished ? '' : ' · in progress') + '</div></div>' +
+      '<div class="tile warm"><div class="k">Faults</div><div class="v">' + s.faults + '</div><div class="u">on ' + s.faultHoles + ' hole' + (s.faultHoles === 1 ? '' : 's') + '</div></div></div></div>';
+    h += '<div class="section"><div class="cap">Scorecard</div>' + scorecardHTML(r) + '</div>';
   }
   h += '<div class="section"><div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-act="editRound">' + (r.finished ? 'Edit holes' : 'Resume') + '</button><button data-act="tab" data-s="home">Done</button></div><button class="btn danger block" data-act="deleteRound">Delete round</button></div>';
   return h + tabs('rounds');
@@ -661,108 +658,116 @@ function screenRounds() {
   return h + tabs('rounds');
 }
 
+
 /* ---------------- insights ---------------- */
-function bump(C, k) { C[k] = (C[k] || 0) + 1; }
-function countCauses(holes) {
-  var C = {};
+function blankGroup() { return { n: 0, holes: [], dirs: {}, shapes: {}, dist: {}, strike: {} }; }
+function addHole(g, h) { g._seen = g._seen || {}; var key = (h._rid || '') + ':' + h.n; if (!g._seen[key]) { g._seen[key] = 1; g.holes.push(h.n); } }
+function bumpDirs(g, h, k) { dirsOf(h, k).forEach(function (d) { g.dirs[d] = (g.dirs[d] || 0) + 1; }); }
+function collect(holes) {
+  var C = {
+    penalty: { n: 0, holes: [], shots: {} }, recovery: { n: 0, holes: [], shots: {} },
+    scoring: blankGroup(), twochip: { n: 0, holes: [], kinds: {} }, threeputt: { n: 0, holes: [], first: {}, unk: 0 }
+  };
+  C.scoring.hit = 0; C.scoring.logged = 0;
   holes.forEach(function (h) {
-    var fl = flags(h);
-    FAULTS.forEach(function (f) {
-      if (!fl[f.id]) return;
-      var t = f.tree;
-      if (t.puttLink && fl.putts) bump(C, f.id + '.putts');
-      if (f.id === 'putts') {
-        var p1 = getVal(h, 'putts.first'), p2 = getVal(h, 'putts.second');
-        if (p2 === 'le3') bump(C, 'putts.short3');
-        else if (p2 && p1) bump(C, 'putts.lag=' + p1);
-      }
-      t.items.forEach(function (it) {
-        var k = f.id + '.' + it.id;
-        if (t.mode === 'pick') { if (!isOn(h, k)) return; bump(C, k); }
-        if (it.dir) DIRS.forEach(function (d) { if (isOn(h, k + '.dir.' + d[0])) bump(C, k + '.dir.' + d[0]); });
-        (it.opts || []).forEach(function (o) {
-          var of = o[2] || {};
-          if (it.single) { if (getVal(h, k) === o[0]) bump(C, k + '=' + o[0]); return; }
-          var on = (of.linkPutts && fl.putts) || isOn(h, k + '.' + o[0]);
-          if (on) bump(C, k + '.' + o[0]);
-          if (of.dir && isOn(h, k + '.' + o[0])) DIRS.forEach(function (d) { if (isOn(h, k + '.' + o[0] + '.dir.' + d[0])) bump(C, k + '.' + o[0] + '.dir.' + d[0]); });
-        });
-      });
+    var s = h.sel || {}, on = h.on || {};
+    if (on.trouble) SHOTS.forEach(function (sh) {
+      var k = 'trouble.' + sh[0], t = s[k] && s[k + '.type'];
+      if (!t) return;
+      var T = C[t === 'pen' ? 'penalty' : 'recovery'];
+      T.n++; addHole(T, h);
+      var S = T.shots[sh[0]] || (T.shots[sh[0]] = blankGroup());
+      S.n++; addHole(S, h); bumpDirs(S, h, k);
+      SHAPES.forEach(function (x) { if (s[k + '.' + x[0]]) S.shapes[x[0]] = (S.shapes[x[0]] || 0) + 1; });
     });
+    if (on.app150 && s['app150.green']) {
+      var A = C.scoring;
+      A.logged++;
+      if (s['app150.green'] === 'hit') A.hit++;
+      else { A.n++; addHole(A, h); bumpDirs(A, h, 'app150'); var dk = s['app150.dist'] || 'unk'; A.dist[dk] = (A.dist[dk] || 0) + 1; }
+    }
+    if (on.twochip) {
+      var W = C.twochip; W.n++; addHole(W, h);
+      var kind = s['twochip.kind'] || 'unk';
+      var K = W.kinds[kind] || (W.kinds[kind] = blankGroup());
+      K.n++; addHole(K, h); bumpDirs(K, h, 'twochip');
+      if (s['twochip.dist']) K.dist[s['twochip.dist']] = (K.dist[s['twochip.dist']] || 0) + 1;
+      CHIP_STRIKE.forEach(function (x) { if (s['twochip.' + x[0]]) K.strike[x[0]] = (K.strike[x[0]] || 0) + 1; });
+    }
+    if (on.threeputt) {
+      var P = C.threeputt; P.n++; addHole(P, h);
+      if (s['threeputt.first']) P.first[s['threeputt.first']] = (P.first[s['threeputt.first']] || 0) + 1; else P.unk++;
+    }
   });
   return C;
 }
-function topCauses(C) {
-  // plain-language list of the most common specific causes
-  var out = [];
-  FAULTS.forEach(function (f) {
-    var t = f.tree;
-    if (f.id === 'putts') {
-      PUTTS.items[0].opts.forEach(function (o) { var n = C['putts.lag=' + o[0]]; if (n) out.push({ label: '3+ putts · 1st putt ' + o[1] + ', 2nd outside 3 ft', n: n }); });
-      if (C['putts.short3']) out.push({ label: '3+ putts · missed from 3 ft or closer', n: C['putts.short3'] });
-      return;
-    }
-    if (t.puttLink && C[f.id + '.putts']) out.push({ label: f.short + ' · Putts', n: C[f.id + '.putts'] });
-    t.items.forEach(function (it) {
-      var k = f.id + '.' + it.id;
-      var opts = it.opts || [], anyChild = false;
-      opts.forEach(function (o) {
-        var n = it.single ? C[k + '=' + o[0]] : C[k + '.' + o[0]];
-        if (n) { anyChild = true; out.push({ label: f.short + ' · ' + (t.mode === 'pick' ? it.label + ' ' : it.label + ': ') + o[1].toLowerCase(), n: n }); }
-      });
-      if (t.mode === 'pick' && C[k] && !anyChild) out.push({ label: f.short + ' · ' + it.label, n: C[k] });
+function compassHTML(dirs, label) {
+  var top = 0; DIRS.forEach(function (d) { top = Math.max(top, dirs[d[0]] || 0); });
+  return '<div class="compass" role="img" aria-label="' + esc((label || 'Misses') + ': ' + DIRS.map(function (d) { return (dirs[d[0]] || 0) + ' ' + DIRW[d[0]]; }).join(', ')) + '">' + DIRS.map(function (d) {
+    var n = dirs[d[0]] || 0;
+    return '<span style="grid-column:' + d[2] + ';grid-row:' + d[3] + '" class="' + (!n ? 'z' : n === top ? 'w' : '') + '">' + svgArrow(d[4]).replace('width="18" height="18"', 'width="13" height="13"') + n + '</span>';
+  }).join('') + '</div>';
+}
+function pillsHTML(list, counts, cols) {
+  return '<div class="pills" style="grid-template-columns:repeat(' + cols + ',minmax(0,1fr))">' + list.map(function (o) {
+    var n = counts[o[0]] || 0;
+    return '<span class="' + (n ? 'w' : '') + '">' + esc(o[1]) + ' ' + n + '</span>';
+  }).join('') + '</div>';
+}
+function holesLabel(g, opt, n18) {
+  if (opt.round) { var hs = g.holes.slice().sort(function (a, b) { return a - b; }); return plural(hs.length, 'hole ', 'holes ') + hs.join(', '); }
+  return dec(g.n / n18 * 18) + ' per 18';
+}
+function plural(n, a, b) { return n === 1 ? a : b; }
+function typeCard(ft, n, sub, body) {
+  return '<div class="tcard"><div class="thead"><span class="tname"><span class="sw" style="background:' + ft.color + '"></span>' + ft.label + '</span><span class="tcount"><span class="tsub">' + esc(sub) + '</span><span class="num">' + n + '</span></span></div>' + body + '</div>';
+}
+function shotSection(title, g, sub, groups, first) {
+  return '<div class="tsect' + (first ? ' first' : '') + '"><div class="row between" style="align-items:baseline"><span class="tsname">' + title + '</span><span class="hint">' + g.n + ' · ' + esc(sub) + '</span></div>' +
+    '<div class="row" style="gap:14px;align-items:center">' + compassHTML(g.dirs, title + ' misses') + '<div class="stack" style="gap:6px;flex:1;min-width:0">' + groups.join('') + '</div></div></div>';
+}
+function typeCardsHTML(C, opt, n18) {
+  var out = '', FT = {}; FTYPES.forEach(function (f) { FT[f.id] = f; });
+  ['penalty', 'recovery'].forEach(function (id) {
+    var T = C[id]; if (!T.n) return;
+    var body = '', first = true;
+    SHOTS.forEach(function (sh) {
+      var S = T.shots[sh[0]]; if (!S) return;
+      body += shotSection(sh[1], S, holesLabel(S, opt, n18), [pillsHTML(SHAPES, S.shapes, 3)], first); first = false;
     });
+    out += typeCard(FT[id], T.n, holesLabel(T, opt, n18), body);
   });
-  return out.sort(function (a, b) { return b.n - a.n; });
-}
-function compassHTML(C, k, center) {
-  var get = function (d) { return C[k + '.dir.' + d] || 0; };
-  var cell = function (d, c, r) { var n = get(d[0]); return '<span style="grid-column:' + c + ';grid-row:' + r + '" class="' + (n ? '' : 'z') + '" aria-label="' + d[1] + ': ' + n + '">' + svgArrow(d[4]).replace('width="18" height="18"', 'width="13" height="13"') + n + '</span>'; };
-  return '<div class="compass" role="img" aria-label="Miss direction counts">' + cell(DIRS[0], 2, 1) + cell(DIRS[1], 1, 2) + '<span class="c" style="grid-column:2;grid-row:2">' + esc(center || '') + '</span>' + cell(DIRS[2], 3, 2) + cell(DIRS[3], 2, 3) + '</div>';
-}
-function dirTotal(C, k) { var n = 0; DIRS.forEach(function (d) { n += C[k + '.dir.' + d[0]] || 0; }); return n; }
-function causeSection(f, C, total) {
-  var t = f.tree, out = '';
-  if (t.mode === 'pick') {
-    var rows = t.items.map(function (it) { return { label: it.label, n: C[f.id + '.' + it.id] || 0 }; });
-    if (t.puttLink) rows.push({ label: 'Putts', n: C[f.id + '.putts'] || 0 });
-    out += '<div class="slabel">' + t.prompt + '</div>' + barsHTML(rows);
-    var minis = '';
-    t.items.forEach(function (it) {
-      var k = f.id + '.' + it.id;
-      if (!C[k]) return;
-      var inner = '';
-      if (it.opts) inner += barsHTML(it.opts.map(function (o) { return { label: o[1], n: C[k + '.' + o[0]] || 0 }; }));
-      var dirs = it.dir && dirTotal(C, k) ? compassHTML(C, k, it.label) : '';
-      minis += '<div class="mini"><div class="slabel">' + it.label + ' · ' + C[k] + '</div><div class="row" style="align-items:flex-start;gap:12px">' + dirs + '<div style="flex:1;min-width:0">' + inner + '</div></div></div>';
-    });
-    if (minis) out += '<div class="stack">' + minis + '</div>';
-  } else if (f.id === 'putts') {
-    var first = PUTTS.items[0];
-    var lag = first.opts.map(function (o) { return { label: o[1], n: C['putts.lag=' + o[0]] || 0 }; });
-    var lagN = lag.reduce(function (a, x) { return a + x.n; }, 0), s3 = C['putts.short3'] || 0;
-    out += '<div class="mini"><div class="slabel">1st putt, when the 2nd putt was outside 3 ft · ' + lagN + '</div>' + barsHTML(lag) + '</div>';
-    out += '<div class="row between" style="padding-top:10px;border-top:1px solid var(--rule2)"><span class="slabel">Missed from 3 ft or closer</span><span class="num" style="font-size:24px;color:' + (s3 ? 'var(--orange)' : 'var(--faint)') + '">' + s3 + '</span></div>';
-    var unk = total - lagN - s3;
-    if (unk > 0) out += '<div class="hint">' + unk + ' three-putt' + (unk === 1 ? '' : 's') + ' without both putt distances marked.</div>';
-  } else {
-    t.items.forEach(function (it) {
-      var k = f.id + '.' + it.id;
-      var rows = it.opts.map(function (o) { return { label: o[1], n: (it.single ? C[k + '=' + o[0]] : C[k + '.' + o[0]]) || 0 }; });
-      out += '<div class="mini"><div class="slabel">' + it.label + '</div>' + barsHTML(rows) + '</div>';
-      it.opts.forEach(function (o) {
-        var of = o[2] || {};
-        if (of.dir && dirTotal(C, k + '.' + o[0])) out += '<div class="row" style="gap:12px">' + compassHTML(C, k + '.' + o[0], '') + '<span class="slabel">' + o[1] + ' · direction</span></div>';
-      });
-    });
+  var A = C.scoring;
+  if (A.n || A.logged) {
+    var body = '<div class="hint" style="font-size:13px">Greens hit from 150 in: <strong style="color:var(--ink)">' + A.hit + ' of ' + A.logged + '</strong> logged approaches</div>';
+    if (A.n) {
+      var dl = APP_DIST.slice(); if (A.dist.unk) dl.push(['unk', 'Not marked']);
+      body += '<div class="row" style="gap:14px;align-items:center">' + compassHTML(A.dirs, 'Missed approaches') + '<div class="stack" style="gap:6px;flex:1;min-width:0">' + dl.map(function (o) {
+        var n = A.dist[o[0]] || 0; return '<div class="row between" style="font-size:14px;' + (n ? '' : 'color:var(--faint)') + '"><span>' + esc(o[1]) + '</span>' + (n ? '<strong>' + n + '</strong>' : '<span>0</span>') + '</div>';
+      }).join('') + '</div></div>';
+    }
+    out += typeCard(FT.scoring, A.n, A.n ? 'missed greens · ' + holesLabel(A, opt, n18) : 'no missed greens', body);
   }
-  return '<div class="sub"><div class="subh"><span class="t">' + f.title + '</span><span class="hint">' + total + ' time' + (total === 1 ? '' : 's') + '</span></div>' + out + '</div>';
+  var W = C.twochip;
+  if (W.n) {
+    var body2 = '', f2 = true;
+    CHIP_KIND.concat([['unk', 'Shot not marked']]).forEach(function (kd) {
+      var K = W.kinds[kd[0]]; if (!K) return;
+      body2 += shotSection(kd[1], K, holesLabel(K, opt, n18), [pillsHTML(CHIP_DIST, K.dist, 2), pillsHTML(CHIP_STRIKE, K.strike, 2)], f2); f2 = false;
+    });
+    out += typeCard(FT.twochip, W.n, holesLabel(W, opt, n18), body2);
+  }
+  var P = C.threeputt;
+  if (P.n) {
+    var rows = PUTT_FIRST.map(function (o) { return { label: o[1], n: P.first[o[0]] || 0 }; });
+    var body3 = '<div class="slabel">1st putt distance</div>' + barsHTML(rows) + (P.unk ? '<div class="hint">' + P.unk + ' without a 1st putt distance marked.</div>' : '');
+    out += typeCard(FT.threeputt, P.n, holesLabel(P, opt, n18), body3);
+  }
+  return out;
 }
-var PIE_COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];
 function pieHTML(rows, total, id) {
   var cx = 70, cy = 70, R = 66, a0 = -Math.PI / 2, svg = '';
-  var live = rows.map(function (r, i) { return { label: r[0], n: r[1], color: PIE_COLORS[i] }; });
-  var nz = live.filter(function (r) { return r.n; });
+  var nz = rows.filter(function (r) { return r.n; });
   nz.forEach(function (r) {
     var frac = r.n / total, a1 = a0 + frac * Math.PI * 2;
     var tip = r.label + ': ' + Math.round(frac * 100) + '% (' + r.n + ' of ' + total + ')';
@@ -773,10 +778,10 @@ function pieHTML(rows, total, id) {
     }
     a0 = a1;
   });
-  var legend = live.map(function (r) {
+  var legend = rows.map(function (r) {
     return '<div class="lg' + (r.n ? '' : ' z') + '"><span class="sw" style="background:' + r.color + '"></span><span class="ll">' + r.label + '</span><span class="lp">' + Math.round(r.n / total * 100) + '%</span><span class="lc">' + r.n + ' of ' + total + '</span></div>';
   }).join('');
-  return '<div class="pie"><svg viewBox="0 0 140 140" width="140" height="140" role="img" aria-label="' + esc(live.map(function (r) { return r.label + ' ' + Math.round(r.n / total * 100) + '%'; }).join(', ')) + '">' + svg + '</svg><div class="legend">' + legend + '</div></div><div class="tip" id="' + id + '">Tap a slice for details</div>';
+  return '<div class="pie"><svg viewBox="0 0 140 140" width="140" height="140" role="img" aria-label="' + esc(rows.map(function (r) { return r.label + ' ' + Math.round(r.n / total * 100) + '%'; }).join(', ')) + '">' + svg + '</svg><div class="legend">' + legend + '</div></div><div class="tip" id="' + id + '">Tap a slice for details</div>';
 }
 function niceStep(raw) { var p = Math.pow(10, Math.floor(Math.log10(raw || 1))); var m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
 function lineChart(id, pts, yLabelFmt) {
@@ -801,6 +806,7 @@ function lineChart(id, pts, yLabelFmt) {
   s += '</svg>';
   return '<div class="chart">' + s + '<div class="tip" id="' + id + '">Tap a point for details</div></div>';
 }
+
 function screenInsights() {
   var h = '<header class="topbar"><div class="title">Insights</div></header>';
   var all = db.rounds.filter(function (r) { return playedHoles(r).length; });
@@ -819,54 +825,52 @@ function screenInsights() {
 
   return h + insightsBody(rs, { course: I.course }) + tabs('insights');
 }
+
 function insightsBody(rs, opt) {
   var h = '', trouble = opt.course && opt.course !== 'all';
-  var holes = [], faults = 0, clean = 0, score = 0, faultHoleScore = 0, cleanScore = 0, faultHoles = 0;
-  var byFault = {}; FAULTS.forEach(function (f) { byFault[f.id] = 0; });
+  var holes = [], nf = 0, clean = 0, score = 0, faultHoleScore = 0, cleanScore = 0, faultHoles = 0;
   var byPar = { 3: { h: 0, f: 0 }, 4: { h: 0, f: 0 }, 5: { h: 0, f: 0 } };
   var holeKey = {};
   rs.forEach(function (r) {
     playedHoles(r).forEach(function (x) {
+      x._rid = r.id;
       holes.push(x);
-      var fl = flags(x), c = faultCount(x);
-      faults += c; score += x.delta;
+      var c = faultCount(x);
+      nf += c; score += x.delta;
       if (c) { faultHoles++; faultHoleScore += x.delta; } else { clean++; cleanScore += x.delta; }
-      FAULTS.forEach(function (f) { if (fl[f.id]) byFault[f.id]++; });
       if (byPar[x.par]) { byPar[x.par].h++; byPar[x.par].f += c; }
       if (trouble) { var hk = holeKey[x.n] || (holeKey[x.n] = { n: x.n, par: x.par, plays: 0, f: 0, s: 0 }); hk.plays++; hk.f += c; hk.s += x.delta; }
     });
   });
   var n = holes.length;
+  var C = collect(holes);
   h += '<div class="section"><div class="cap">' + (opt.round ? n + ' holes played' : rs.length + ' round' + (rs.length === 1 ? '' : 's') + ' · ' + n + ' holes') + '</div><div class="tiles">' +
-    (opt.round ? '<div class="tile warm"><div class="k">Faults</div><div class="v">' + faults + '</div><div class="u">on ' + faultHoles + ' hole' + (faultHoles === 1 ? '' : 's') + '</div></div>'
-      : '<div class="tile warm"><div class="k">Faults per 18</div><div class="v">' + dec(faults / n * 18) + '</div><div class="u">' + dec(faults / n, 2) + ' per hole</div></div>') +
-    '<div class="tile"><div class="k">Clean holes</div><div class="v">' + pct(clean, n) + '</div><div class="u">' + clean + ' of ' + n + '</div></div>' +
+    (opt.round ? '<div class="tile warm"><div class="k">Faults</div><div class="v">' + nf + '</div><div class="u">on ' + faultHoles + ' hole' + (faultHoles === 1 ? '' : 's') + '</div></div>'
+      : '<div class="tile warm"><div class="k">Faults per 18</div><div class="v">' + dec(nf / n * 18) + '</div><div class="u">' + dec(nf / n, 2) + ' per hole</div></div>') +
     (opt.round ? '<div class="tile"><div class="k">Score to par</div><div class="v">' + rel(score) + '</div><div class="u">' + n + ' holes</div></div>'
       : '<div class="tile"><div class="k">Score per 18</div><div class="v">' + relDec(score / n * 18) + '</div><div class="u">to par</div></div>') +
+    '<div class="tile"><div class="k">Clean holes</div><div class="v">' + pct(clean, n) + '</div><div class="u">' + clean + ' of ' + n + '</div></div>' +
     '<div class="tile"><div class="k">Over par from fault holes</div><div class="v">' + (score > 0 ? pct(Math.max(faultHoleScore, 0), score) : '–') + '</div><div class="u">' + rel(faultHoleScore) + ' of ' + rel(score) + '</div></div></div></div>';
 
   // takeaways
-  var C = countCauses(holes);
+  var counts = FTYPES.map(function (f, i) { return { f: f, n: C[f.id].n, i: i }; });
+  var sorted = counts.slice().sort(function (a, b) { return b.n - a.n || a.i - b.i; });
   var tk = [];
-  var fr = FAULTS.map(function (f) { return { f: f, n: byFault[f.id] }; }).sort(function (a, b) { return b.n - a.n; });
-  if (fr[0].n) tk.push((opt.round ? 'Your most common fault this round was' : 'Your most common fault is') + ' <strong>' + fr[0].f.short + '</strong>: ' + fr[0].n + ' time' + (fr[0].n === 1 ? '' : 's') + (opt.round ? '.' : ', or ' + dec(fr[0].n / n * 18) + ' per 18.'));
+  if (nf && sorted[0].n) tk.push((opt.round ? 'Your most common fault this round was ' : 'Your most common fault is ') + '<strong>' + sorted[0].f.label + '</strong>: ' + sorted[0].n + ' of ' + nf + ' faults.');
   if (faultHoles && clean) tk.push('Fault holes average <strong>' + relDec(faultHoleScore / faultHoles) + '</strong> to par; clean holes average <strong>' + relDec(cleanScore / clean) + '</strong>.');
-  var tc = topCauses(C);
-  if (tc.length) tk.push('Top specific cause: <strong>' + esc(tc[0].label) + '</strong> (' + tc[0].n + ').');
-  ['double', 'p5'].forEach(function (fid) {
-    ['tee', 'app'].forEach(function (a) {
-      var k = fid + '.' + a, tot = dirTotal(C, k);
-      if (tot >= 3) {
-        var best = DIRS.slice().sort(function (p, q) { return (C[k + '.dir.' + q[0]] || 0) - (C[k + '.dir.' + p[0]] || 0); })[0];
-        var bn = C[k + '.dir.' + best[0]] || 0;
-        if (bn / tot >= 0.5 && fid === 'double') tk.push('On doubles, your ' + (a === 'tee' ? 'tee shot' : 'approach') + ' misses lean <strong>' + best[1].toLowerCase() + '</strong> (' + bn + ' of ' + tot + ' marked).');
-      }
-    });
-  });
+  var td = {}, tdn = 0;
+  ['penalty', 'recovery'].forEach(function (id) { Object.keys(C[id].shots).forEach(function (k) { var S = C[id].shots[k]; Object.keys(S.dirs).forEach(function (d) { td[d] = (td[d] || 0) + S.dirs[d]; tdn += S.dirs[d]; }); }); });
+  var tdTop = Object.keys(td).sort(function (a, b) { return td[b] - td[a]; })[0];
+  if (tdn >= 3 && tdTop && td[tdTop] / tdn > 0.5) tk.push('Your penalty and recovery misses lean <strong>' + DIRW[tdTop] + '</strong> (' + td[tdTop] + ' of ' + tdn + ' marked).');
+  if (C.scoring.logged >= 3) tk.push('You hit <strong>' + C.scoring.hit + ' of ' + C.scoring.logged + '</strong> logged greens from 150 yds in.');
   if (tk.length) h += '<div class="section"><div class="cap">Takeaways</div><div class="card stack">' + tk.map(function (t) { return '<div class="takeaway"><span>' + t + '</span></div>'; }).join('') + '</div></div>';
 
-  // frequency
-  h += '<div class="section"><div class="cap">How often each fault happens</div><div class="card">' + barsHTML(FAULTS.map(function (f) { return { label: f.short, n: byFault[f.id], sub: pct(byFault[f.id], n) + ' of holes' }; })) + '</div></div>';
+  // faults by type
+  if (nf) {
+    var pieRows = sorted.map(function (x) { return { label: x.f.label, n: x.n, color: x.f.color }; });
+    h += '<div class="section"><div class="cap">Faults by type</div><div class="card">' + pieHTML(pieRows, nf, opt.round ? 'pieR' : 'pieA') +
+      '<div class="hint" style="border-top:1px solid var(--rule2);padding-top:10px;margin-top:10px">Penalty and Recovery count once per shot (Tee, App, Chip, Sand), so one hole can have several. Scoring approach counts only when the green was missed. Two chip and Three putt count once per hole.</div></div></div>';
+  }
 
   // trends
   var trs = opt.round ? [] : rs.filter(function (r) { return playedHoles(r).length >= 9; });
@@ -879,38 +883,9 @@ function insightsBody(rs, opt) {
     h += '<div class="section"><div class="hint">Trends over time appear after two rounds of 9+ holes.</div></div>';
   }
 
-  // by par
+  // by par (all rounds only)
   var parRows = [3, 4, 5].filter(function (p) { return byPar[p].h; });
-  if (parRows.length) h += '<div class="section"><div class="cap">Faults per hole by par</div><div class="card">' + barsHTML(parRows.map(function (p) { return { label: 'Par ' + p, n: +dec(byPar[p].f / byPar[p].h, 2), sub: byPar[p].h + ' holes' }; })) + '</div></div>';
-
-  // shot type frequency in faults
-  if (faults) {
-    var ST = { tee: 0, app: 0, chip: 0, sand: 0, putt: 0 };
-    holes.forEach(function (x) {
-      var fl = flags(x), seen = {};
-      FAULTS.forEach(function (f) {
-        if (!fl[f.id]) return;
-        if (f.id === 'double' || f.id === 'p5') {
-          ['tee', 'app', 'chip', 'sand'].forEach(function (a) { if (isOn(x, f.id + '.' + a)) seen[a] = 1; });
-          if (fl.putts) seen.putt = 1;
-        } else if (f.id === 'inside') {
-          if (isOn(x, 'inside.why.recovery')) seen.tee = 1;
-          if (isOn(x, 'inside.why.missed')) seen.app = 1;
-          if (isOn(x, 'inside.why.chip')) seen.chip = 1;
-          if (fl.putts || isOn(x, 'inside.why.putts')) seen.putt = 1;
-        } else if (f.id === 'updown') {
-          if (isOn(x, 'updown.chip')) seen.chip = 1;
-          if (isOn(x, 'updown.putt')) seen.putt = 1;
-        } else if (f.id === 'putts') seen.putt = 1;
-      });
-      Object.keys(seen).forEach(function (k) { ST[k]++; });
-    });
-    var stTotal = ST.tee + ST.app + ST.chip + ST.sand + ST.putt;
-    var stRows = [['tee', 'Tee'], ['app', 'App'], ['chip', 'Chip'], ['sand', 'Sand'], ['putt', 'Putts']].map(function (x) {
-      return { label: x[1], n: stTotal ? Math.round(ST[x[0]] / stTotal * 100) : 0, sub: ST[x[0]] + ' of ' + stTotal };
-    });
-    h += '<div class="section"><div class="cap">Shot type frequency in faults</div><div class="card">' + (stTotal ? pieHTML([['Tee', ST.tee], ['App', ST.app], ['Chip', ST.chip], ['Sand', ST.sand], ['Putts', ST.putt]], stTotal, opt.round ? 'pieR' : 'pieA') : '<div class="hint">No shot types marked on your faults yet.</div>') + '</div><div class="hint">Each shot type\u2019s share of all the shots marked across your faults. Each shot type counts once per hole, however many faults it fed.</div></div>';
-  }
+  if (!opt.round && parRows.length) h += '<div class="section"><div class="cap">Faults per hole by par</div><div class="card">' + barsHTML(parRows.map(function (p) { return { label: 'Par ' + p, n: +dec(byPar[p].f / byPar[p].h, 2), sub: byPar[p].h + ' holes' }; })) + '</div></div>';
 
   // trouble holes
   if (trouble) {
@@ -918,9 +893,10 @@ function insightsBody(rs, opt) {
     if (th.length) h += '<div class="section"><div class="cap">Trouble holes here</div><div class="card">' + barsHTML(th.map(function (x) { return { label: 'Hole ' + x.n + (x.par ? ' · par ' + x.par : ''), n: +dec(x.f / x.plays, 2), sub: x.plays + ' play' + (x.plays === 1 ? '' : 's') + ' · ' + relDec(x.s / x.plays) }; })) + '</div><div class="hint">Faults per time played.</div></div>';
   }
 
-  // causes
-  var cs = FAULTS.filter(function (f) { return byFault[f.id]; }).map(function (f) { return causeSection(f, C, byFault[f.id]); }).join('');
-  if (cs) h += '<div class="section"><div class="cap">What’s causing them</div>' + cs + '</div>';
+  // by fault type
+  var cards = typeCardsHTML(C, opt, n);
+  if (cards) h += '<div class="section"><div class="cap">By fault type</div>' + cards + '</div>';
+  holes.forEach(function (x) { delete x._rid; });
   return h;
 }
 
@@ -941,14 +917,14 @@ function screenSettings() {
 }
 
 /* ---------------- sync ---------------- */
-function portable() { return { v: 1, exportedAt: now(), rounds: db.rounds, deleted: db.deleted, courses: db.courses }; }
+function portable() { return { v: 2, exportedAt: now(), rounds: db.rounds, deleted: db.deleted, courses: db.courses }; }
 function mergeIn(other) {
   if (!other || typeof other !== 'object') throw new Error('That file doesn’t look like Faults data.');
   var del = Object.assign({}, db.deleted);
   Object.keys(other.deleted || {}).forEach(function (k) { if (!del[k] || other.deleted[k] > del[k]) del[k] = other.deleted[k]; });
   var map = {};
   db.rounds.concat(other.rounds || []).forEach(function (r) {
-    if (!r || !r.id || !Array.isArray(r.holes)) return;
+    if (!normRound(r)) return;
     var cur = map[r.id];
     if (!cur || (r.updatedAt || '') > (cur.updatedAt || '')) map[r.id] = r;
   });
@@ -1050,7 +1026,7 @@ var ACTIONS = {
     var nums = S.side === 'front' ? range(1, 9) : S.side === 'back' ? range(10, 18) : range(1, 18);
     var tee = S.tee;
     var r = {
-      id: uid(), createdAt: now(), updatedAt: now(), date: (dEl && dEl.value) || todayISO(),
+      v: 2, id: uid(), createdAt: now(), updatedAt: now(), date: (dEl && dEl.value) || todayISO(),
       courseId: S.course && S.course.id != null ? S.course.id : null,
       courseName: S.course ? courseTitle(S.course) : (S.manualName || 'Round'),
       teeName: tee ? tee.name : '', teeGender: tee ? tee.gender : '', side: S.side,
@@ -1063,23 +1039,25 @@ var ACTIONS = {
   score: function (d) {
     var h = curHole(), v = +d.v;
     if (v === 3 && !d.exact && h.delta >= 3) return;
-    setDelta(h, v); holeChanged();
+    h.delta = v; holeChanged();
   },
-  fault: function (d) { toggleFault(curHole(), d.f); holeChanged(); },
+  row: function (d) {
+    var h = curHole(), id = d.f;
+    h.on[id] = !h.on[id];
+    if (!h.on[id]) { delete h.on[id]; clearPrefix(h.sel, id); }
+    holeChanged();
+  },
   sel: function (d) {
     var h = curHole(), k = d.k;
-    materialize(h, k);
     if (h.sel[k]) clearPrefix(h.sel, k); else h.sel[k] = true;
-    if (k.indexOf('inside.why.') === 0) syncSave(h);
     holeChanged();
   },
   one: function (d) {
     var h = curHole(), k = d.k;
-    materialize(h, k);
     if (h.sel[k] === d.v) delete h.sel[k]; else h.sel[k] = d.v;
     holeChanged();
   },
-  reset: function () { var h = curHole(); h.delta = 0; h.f = {}; h.sel = {}; h.p5Linked = false; h.mirChip = h.mirPutt = h.updownAuto = false; holeChanged(); },
+  reset: function () { var h = curHole(); h.delta = 0; h.on = {}; h.sel = {}; holeChanged(); },
   goHole: function (d) { var r = curRound(); r.cur = +d.i; touch(r); render(); window.scrollTo(0, 0); },
   prevHole: function () { var r = curRound(); if (r.cur > 0) { r.cur--; touch(r); render(); window.scrollTo(0, 0); } },
   nextHole: function () { var r = curRound(); if (r.cur < r.holes.length - 1) { r.cur++; touch(r); render(); window.scrollTo(0, 0); } },

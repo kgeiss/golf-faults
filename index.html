@@ -894,13 +894,15 @@ function insightsBody(rs, opt) {
   var counts = FTYPES.map(function (f, i) { return { f: f, n: C[f.id].n, i: i }; });
   var sorted = counts.slice().sort(function (a, b) { return b.n - a.n || a.i - b.i; });
   var tk = [];
+  var pn = C.penalty.n, rn = C.recovery.n, prn = pn + rn;
+  if (prn) tk.push('You had <strong>' + pn + ' ' + (pn === 1 ? 'penalty' : 'penalties') + '</strong> and <strong>' + rn + ' recovery ' + (rn === 1 ? 'shot' : 'shots') + '</strong>: <strong>' + prn + ' combined</strong> (' + Math.round(prn / nf * 100) + '% of faults' + (opt.round ? '' : ', ' + dec(prn / n * 18) + ' per 18') + ').');
   if (nf && sorted[0].n) tk.push((opt.round ? 'Your most common fault this round was ' : 'Your most common fault is ') + '<strong>' + sorted[0].f.label + '</strong>: ' + sorted[0].n + ' of ' + nf + ' faults.');
   if (faultHoles && clean) tk.push('Fault holes average <strong>' + relDec(faultHoleScore / faultHoles) + '</strong> to par; clean holes average <strong>' + relDec(cleanScore / clean) + '</strong>.');
   var td = {}, tdn = 0;
   ['penalty', 'recovery'].forEach(function (id) { Object.keys(C[id].shots).forEach(function (k) { var S = C[id].shots[k]; Object.keys(S.dirs).forEach(function (d) { td[d] = (td[d] || 0) + S.dirs[d]; tdn += S.dirs[d]; }); }); });
   var tdTop = Object.keys(td).sort(function (a, b) { return td[b] - td[a]; })[0];
   if (tdn >= 3 && tdTop && td[tdTop] / tdn > 0.5) tk.push('Your penalty and recovery misses lean <strong>' + DIRW[tdTop] + '</strong> (' + td[tdTop] + ' of ' + tdn + ' marked).');
-  if (C.scoring.logged >= 3) tk.push('You hit <strong>' + C.scoring.hit + ' of ' + C.scoring.logged + '</strong> logged greens from 150 yds in.');
+  if (C.scoring.logged >= 3) tk.push('You hit <strong>' + C.scoring.hit + ' of ' + C.scoring.logged + ' (' + Math.round(C.scoring.hit / C.scoring.logged * 100) + '%)</strong> logged greens from 150 yds in.');
   if (tk.length) h += '<div class="section"><div class="cap">Takeaways</div><div class="card stack">' + tk.map(function (t) { return '<div class="takeaway"><span>' + t + '</span></div>'; }).join('') + '</div></div>';
 
   // faults by type

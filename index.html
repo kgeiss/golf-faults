@@ -903,6 +903,8 @@ function insightsBody(rs, opt) {
   var tdTop = Object.keys(td).sort(function (a, b) { return td[b] - td[a]; })[0];
   if (tdn >= 3 && tdTop && td[tdTop] / tdn > 0.5) tk.push('Your penalty and recovery misses lean <strong>' + DIRW[tdTop] + '</strong> (' + td[tdTop] + ' of ' + tdn + ' marked).');
   if (C.scoring.logged >= 3) tk.push('You hit <strong>' + C.scoring.hit + ' of ' + C.scoring.logged + ' (' + Math.round(C.scoring.hit / C.scoring.logged * 100) + '%)</strong> logged greens from 150 yds in.');
+  var p3 = C.threeputt.n;
+  tk.push(p3 ? 'You 3-putted <strong>' + p3 + ' ' + (p3 === 1 ? 'time' : 'times') + '</strong>, or on <strong>' + Math.round(p3 / n * 100) + '%</strong> of all holes.' : 'You didn\u2019t 3-putt on any of your ' + n + ' holes.');
   if (tk.length) h += '<div class="section"><div class="cap">Takeaways</div><div class="card stack">' + tk.map(function (t) { return '<div class="takeaway"><span>' + t + '</span></div>'; }).join('') + '</div></div>';
 
   // faults by type

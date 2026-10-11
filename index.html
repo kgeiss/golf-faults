@@ -247,6 +247,7 @@ var APP_DIST = [['d100', '≤100 yds'], ['d125', '101–125'], ['d126', '126–1
 var CHIP_KIND = [['chip', 'Chip'], ['sand', 'Sand']];
 var CHIP_DIST = [['le10', '≤10 yds'], ['g11', '11+ yds']];
 var CHIP_STRIKE = [['thin', 'Thin'], ['fat', 'Fat']];
+var PUTT_SLOPE = [['up', 'Uphill'], ['down', 'Downhill'], ['flat', 'Flat']];
 var PUTT_FIRST = [['le20', '≤20 ft'], ['f21', '21–30 ft'], ['f31', '31–40 ft'], ['f41', '41+ ft']];
 var DIRS = [
   ['up', 'Long', 2, 1, 'M12 19V5M6 11l6-6 6 6'],
@@ -396,6 +397,7 @@ function rowSummary(h, id) {
     if (s['twochip.dist']) bits.push(labelOf(CHIP_DIST, s['twochip.dist']));
   } else if (id === 'threeputt') {
     if (s['threeputt.first']) bits.push('1st putt ' + labelOf(PUTT_FIRST, s['threeputt.first']));
+    if (s['threeputt.slope']) bits.push(labelOf(PUTT_SLOPE, s['threeputt.slope']).toLowerCase());
   }
   return bits.join(' · ');
 }
@@ -587,6 +589,7 @@ function panelFor(h, id) {
     out += sect('Miss direction, shot, distance and strike', '<div class="srow">' + padHTML(h, 'twochip') + '<div class="opts">' + oneChips(h, 'twochip.kind', CHIP_KIND) + DIVIDER + '<div class="g2">' + oneChips(h, 'twochip.dist', CHIP_DIST) + '</div>' + DIVIDER + '<div class="g2">' + multiChips(h, 'twochip', CHIP_STRIKE) + '</div></div></div>', true);
   } else if (id === 'threeputt') {
     out += sect('1st putt', '<div class="opts">' + oneChips(h, 'threeputt.first', PUTT_FIRST) + '</div>', true);
+    out += sect('Slope', '<div class="opts"><div class="g3">' + oneChips(h, 'threeputt.slope', PUTT_SLOPE) + '</div></div>');
   }
   return '<div class="panel">' + out + '</div>';
 }
@@ -698,7 +701,7 @@ function bumpDirs(g, h, k) { dirsOf(h, k).forEach(function (d) { g.dirs[d] = (g.
 function collect(holes) {
   var C = {
     penalty: { n: 0, holes: [], shots: {} }, recovery: { n: 0, holes: [], shots: {} },
-    scoring: blankGroup(), twochip: { n: 0, holes: [], kinds: {} }, threeputt: { n: 0, holes: [], first: {}, unk: 0 }
+    scoring: blankGroup(), twochip: { n: 0, holes: [], kinds: {} }, threeputt: { n: 0, holes: [], first: {}, unk: 0, slope: {} }
   };
   C.scoring.hit = 0; C.scoring.logged = 0;
   holes.forEach(function (h) {
@@ -731,6 +734,7 @@ function collect(holes) {
     if (on.threeputt) {
       var P = C.threeputt; P.n++; addHole(P, h);
       if (s['threeputt.first']) P.first[s['threeputt.first']] = (P.first[s['threeputt.first']] || 0) + 1; else P.unk++;
+      if (s['threeputt.slope']) P.slope[s['threeputt.slope']] = (P.slope[s['threeputt.slope']] || 0) + 1;
     }
   });
   return C;
@@ -794,7 +798,8 @@ function typeCardsHTML(C, opt, n18) {
   var P = C.threeputt;
   if (P.n) {
     var rows = PUTT_FIRST.map(function (o) { return { label: o[1], n: P.first[o[0]] || 0 }; });
-    var body3 = '<div class="slabel">1st putt distance</div>' + barsHTML(rows) + (P.unk ? '<div class="hint">' + P.unk + ' without a 1st putt distance marked.</div>' : '');
+    var body3 = '<div class="slabel">1st putt distance</div>' + barsHTML(rows) + (P.unk ? '<div class="hint">' + P.unk + ' without a 1st putt distance marked.</div>' : '') +
+      '<div class="slabel">Slope</div>' + pillsHTML(PUTT_SLOPE, P.slope, 3);
     out += typeCard(FT.threeputt, P.n, holesLabel(P, opt, n18), body3);
   }
   return out;

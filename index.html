@@ -1,0 +1,1137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F1EA">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Faults">
+<title>Faults</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4F1EA; --card:#FFFFFF; --ink:#1C2321; --muted:#5B6360; --faint:#7C827F;
+  --rule:#D9D3C7; --rule2:#ECE7DD; --green:#1F5C43; --green-soft:#E4EEE8; --green-line:#BFD6C8;
+  --orange:#C2410C; --orange-soft:#FBEDE5; --orange-line:#E9B79C; --orange-ink:#8A3410;
+  --panel:#FDF8F4; --disabled:#EFEBE3; --track:#E6E0D4;
+  --num:'Barlow Condensed', 'Arial Narrow', sans-serif;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;-webkit-text-size-adjust:100%}
+body{min-height:100vh}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button:disabled{cursor:default}
+input,select{font:inherit;color:inherit}
+a{color:var(--green)}
+#app{max-width:480px;margin:0 auto;padding:0 16px calc(96px + env(safe-area-inset-bottom))}
+.num{font-family:var(--num);font-weight:700}
+.cap{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.row{display:flex;align-items:center;gap:8px}
+.between{justify-content:space-between}
+.stack{display:flex;flex-direction:column;gap:10px}
+.section{margin-top:20px;display:flex;flex-direction:column;gap:10px}
+.card{background:var(--card);border:1px solid var(--rule);border-radius:14px;padding:14px}
+.topbar{position:sticky;top:0;z-index:5;background:var(--paper);padding:calc(12px + env(safe-area-inset-top)) 0 12px;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.title{font-family:var(--num);font-weight:700;font-size:30px;line-height:1}
+.iconbtn{height:44px;min-width:44px;padding:0 12px;border:1px solid var(--rule);background:#fff;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600}
+.btn{height:52px;border-radius:14px;border:1px solid var(--rule);background:#fff;font-weight:600;font-size:16px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 16px}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn.green{background:var(--green);border-color:var(--green);color:#fff}
+.btn.danger{color:#A12A0A;border-color:var(--orange-line)}
+.btn.block{width:100%}
+.btn:disabled{opacity:.45}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:600}
+.input{height:48px;border:1px solid var(--rule);border-radius:12px;background:#fff;padding:0 14px;font-size:16px;width:100%}
+.hint{font-size:12px;color:var(--muted);line-height:1.45}
+.seg{display:grid;gap:6px}
+.seg button{height:48px;border-radius:12px;border:1px solid var(--rule);background:#fff;font-weight:600}
+.seg button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{width:100%;text-align:left;background:#fff;border:1px solid var(--rule);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;min-height:60px}
+.item.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink) inset}
+.item .grow{flex:1 1 auto;min-width:0}
+.item .t{font-weight:600;font-size:15px}
+.item .s{font-size:12px;color:var(--muted);margin-top:2px}
+.pill{font-size:11px;font-weight:600;letter-spacing:.04em;border-radius:6px;padding:3px 7px;white-space:nowrap}
+.pill.green{color:var(--green);background:var(--green-soft)}
+.pill.orange{color:var(--orange-ink);background:var(--orange-soft)}
+.pill.gray{color:var(--muted);background:var(--disabled)}
+.empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:14px;line-height:1.5}
+.err{background:var(--orange-soft);border:1px solid var(--orange-line);color:var(--orange-ink);border-radius:12px;padding:10px 12px;font-size:13px}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{background:#fff;border:1px solid var(--rule);border-radius:14px;padding:12px 14px}
+.tile.warm{background:var(--orange-soft);border-color:var(--orange-line)}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile.warm .k,.tile.warm .u{color:var(--orange-ink)}
+.tile .v{font-family:var(--num);font-weight:700;font-size:40px;line-height:1.05}
+.tile.warm .v{color:var(--orange)}
+.tile .u{font-size:12px;color:var(--muted)}
+/* tab bar */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:#fff;border-top:1px solid var(--rule);padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+.tabs .in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.tabs button{height:52px;border:none;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:600;color:var(--faint)}
+.tabs button.on{color:var(--ink)}
+.navbar{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--paper);border-top:1px solid var(--rule);padding:10px 16px calc(12px + env(safe-area-inset-bottom))}
+.navbar .in{max-width:448px;margin:0 auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.navbar .btn{font-size:17px}
+/* hole screen */
+.holehead{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;padding-top:12px}
+.holeno{font-family:var(--num);font-weight:700;font-size:40px;line-height:1;text-align:center}
+.holemeta{text-align:center;font-size:13px;color:var(--muted);margin-top:4px;min-height:18px}
+.holemeta strong{color:var(--ink)}
+.strip{display:grid;gap:2px;margin-top:12px}
+.strip button{height:24px;padding:0;border-radius:4px;border:1px solid var(--rule);background:transparent;color:var(--faint);font-size:10px;font-weight:600}
+.strip .done{background:var(--green-soft);color:var(--green);border-color:var(--green-line)}
+.strip .bad{background:var(--orange-soft);color:var(--orange);border-color:var(--orange-line)}
+.strip .cur{background:var(--ink);color:#fff;border-color:var(--ink)}
+.scores{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.sbtn{height:56px;padding:0;border-radius:12px;border:1px solid var(--rule);background:#fff;font-family:var(--num);font-weight:700;font-size:26px;line-height:1}
+.sbtn.on{background:var(--green);border-color:var(--green);color:#fff}
+.high{padding:10px;border-radius:12px;background:var(--green-soft);border:1px solid var(--green-line);display:flex;flex-direction:column;gap:6px}
+.high .lbl{font-size:12px;font-weight:600;color:var(--green)}
+.high .sbtn{height:44px;font-size:22px;border-radius:10px}
+.fault{display:flex;flex-direction:column}
+.frow{width:100%;min-height:56px;border-radius:12px;border:1px solid var(--rule);background:#fff;display:flex;align-items:center;gap:12px;padding:8px 12px;text-align:left}
+.frow.on{background:var(--orange-soft);border-color:var(--orange-line);border-radius:12px 12px 0 0}
+.frow:disabled:not(.on){background:var(--disabled)}
+.frow:disabled:not(.on) .ft{color:var(--faint)}
+.box{width:26px;height:26px;flex:none;border-radius:7px;border:2px solid #9A9284;background:#fff;display:flex;align-items:center;justify-content:center}
+.frow:disabled:not(.on) .box{border-color:var(--rule)}
+.frow.on .box{background:var(--orange);border-color:var(--orange)}
+.ftext{display:flex;flex-direction:column;gap:1px;flex:1 1 auto;min-width:0}
+.ft{font-size:15px;font-weight:600}
+.fs{font-size:12px;color:var(--muted)}
+.panel{padding:12px;border:1px solid var(--orange-line);border-top:none;border-radius:0 0 12px 12px;background:var(--panel);display:flex;flex-direction:column;gap:12px}
+.plabel{font-size:12px;font-weight:600;color:var(--orange-ink)}
+.slabel{font-size:12px;font-weight:600;color:var(--muted)}
+.note{font-size:12px;color:var(--green);background:var(--green-soft);border-radius:8px;padding:6px 10px}
+.grp{display:flex;flex-direction:column;gap:6px}
+.l1{display:flex;gap:6px}
+.l1 .chip{flex:1 1 0;min-width:0;height:44px;border-radius:22px;font-weight:600;font-size:14px;padding:0 4px}
+.chip{height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--rule);background:#fff;font-size:13px;font-weight:500}
+.chip.on{background:var(--orange);border-color:var(--orange);color:#fff}
+.chip.on.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip.linked{background:var(--green-soft);color:var(--green);border-color:#8FB5A0}
+.sect{display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid #EED9CB}
+.sect.first{padding-top:0;border-top:none}
+.srow{display:flex;gap:12px;align-items:flex-start}
+.opts{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 0;min-width:0;align-content:flex-start}
+.odir{display:flex;align-items:center;gap:12px;padding-top:4px}
+.pad{display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:4px;flex:none}
+.pad button{width:44px;height:44px;padding:0;border-radius:10px;border:1px solid var(--rule);background:#fff;display:flex;align-items:center;justify-content:center}
+.pad button.on{background:var(--orange);border-color:var(--orange);color:#fff}
+.pdot{display:flex;align-items:center;justify-content:center}
+.pdot::after{content:"";width:8px;height:8px;border-radius:4px;background:#B8B0A2}
+/* summary */
+.sc{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--rule);border-radius:12px;overflow:hidden;font-size:13px;table-layout:fixed}
+.sc th,.sc td{text-align:center;padding:6px 0;border-top:1px solid var(--rule2)}
+.sc tr:first-child th{background:#EFEBE3;color:var(--muted);font-size:11px;border-top:none}
+.sc th:first-child,.sc td:first-child{text-align:left;padding-left:8px;width:52px;font-size:12px;color:var(--muted);font-weight:600}
+.sc .flt td{background:#FDF8F4}
+.sc .flt td:first-child{color:var(--orange-ink)}
+.sc .over{font-weight:700}
+.sc .under{color:var(--green);font-weight:600}
+.sc .fz{color:var(--orange);font-weight:700}
+.sc .dot{color:#B8B0A2}
+/* bars */
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) 3.4em;align-items:center;gap:10px}
+.bar .l{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .tr{height:10px;background:var(--track);border-radius:5px;overflow:hidden}
+.bar .fl{height:10px;background:var(--orange);border-radius:0 4px 4px 0;min-width:2px}
+.bar .n{text-align:right;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.bar .n small{display:block;font-size:11px;font-weight:500;color:var(--muted)}
+.sub{background:#fff;border:1px solid var(--rule);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.subh{display:flex;justify-content:space-between;align-items:baseline}
+.subh .t{font-weight:600}
+.minis{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+.mini{display:flex;flex-direction:column;gap:6px;flex:1 1 140px;min-width:0}
+.compass{display:grid;grid-template-columns:repeat(3,40px);grid-template-rows:repeat(3,34px);gap:2px;flex:none}
+.compass span{display:flex;align-items:center;justify-content:center;gap:2px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.compass .z{color:#B8B0A2;font-weight:500}
+.compass .c{font-size:10px;color:var(--muted);font-weight:500}
+.takeaway{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45}
+.takeaway::before{content:"";flex:none;width:6px;height:6px;border-radius:3px;background:var(--orange);margin-top:8px}
+.chart{background:#fff;border:1px solid var(--rule);border-radius:14px;padding:12px 12px 10px}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .tip{font-size:12px;color:var(--muted);min-height:18px;margin-top:4px}
+.chart .tip strong{color:var(--ink)}
+.filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.filters .chip.on{background:var(--ink);border-color:var(--ink)}
+.select{height:40px;border:1px solid var(--rule);border-radius:20px;background:#fff;padding:0 12px;font-size:13px;max-width:100%}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(110px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--rule);border-top-color:var(--ink);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+<input type="file" id="importFile" accept="application/json,.json" class="sr" tabindex="-1">
+<script>
+(function () {
+'use strict';
+
+/* ---------------- constants ---------------- */
+var LS_KEY = 'faults.v1';
+var API = 'https://api.golfcourseapi.com/v1';
+var GIST_FILE = 'faults-data.json';
+
+var MISS = { mode: 'pick', prompt: 'Where did it go wrong?', puttLink: true, items: [
+  { id: 'tee', label: 'Tee', dir: true, opts: [['pen', 'Penalty'], ['punch', 'Punch-out'], ['club', 'Wrong club']] },
+  { id: 'app', label: 'App', dir: true, opts: [['pen', 'Penalty'], ['short', 'Short-sided'], ['club', 'Wrong club']] },
+  { id: 'chip', label: 'Chip', dir: true, opts: [['chunk', 'Chunk'], ['thin', 'Thin']] },
+  { id: 'sand', label: 'Sand', dir: true, opts: [['chunk', 'Chunk'], ['thin', 'Thin']] }
+] };
+var PUTTS = { mode: 'sections', items: [
+  { id: 'first', label: '1st putt', single: true, opts: [['le20', '≤20 ft'], ['f21', '21–30 ft'], ['f31', '31–40 ft'], ['f40', '40+ ft']] },
+  { id: 'second', label: '2nd putt', single: true, opts: [['gt10', '>10 ft'], ['le10', '≤10 ft'], ['le5', '≤5 ft'], ['le3', '≤3 ft']] }
+] };
+var INSIDE = { mode: 'sections', items: [
+  { id: 'from', label: 'Started from', single: true, opts: [['d120', '121–140'], ['d100', '101–120'], ['d0', '≤100']] },  { id: 'why', label: 'What happened', opts: [['recovery', 'Bad tee', { dir: true }], ['missed', 'Missed green/fringe', { dir: true }], ['chip', 'Bad chip', { dir: true }], ['putts', 'Bad putt', { linkPutts: true }]] }
+] };
+var SAVE = { mode: 'pick', prompt: 'What missed?', items: [
+  { id: 'chip', label: 'Bad chip', dir: true },
+  { id: 'putt', label: 'Bad putt', dir: true }
+] };
+var FAULTS = [
+  { id: 'double', title: 'Double bogey or worse', short: 'Double+', tree: MISS },
+  { id: 'p5', title: 'Bogey or worse on a par 5', short: 'Bogey+ on par 5', tree: MISS },
+  { id: 'inside', title: 'Bogey or worse with scoring club', short: 'Bogey+ scoring club', tree: INSIDE },
+  { id: 'updown', title: 'Blown easy save', short: 'Blown easy save', tree: SAVE },
+  { id: 'putts', title: '3+ putts', short: '3+ putts', tree: PUTTS }
+];
+var DIRS = [
+  ['up', 'Up', 2, 1, 'M12 19V5M6 11l6-6 6 6'],
+  ['left', 'Left', 1, 2, 'M19 12H5M11 6l-6 6 6 6'],
+  ['right', 'Right', 3, 2, 'M5 12h14M13 6l6 6-6 6'],
+  ['down', 'Down', 2, 3, 'M12 5v14M6 13l6 6 6-6']
+];
+var SCORE_NAMES = { '-2': 'Eagle', '-1': 'Birdie', '0': 'Par', '1': 'Bogey', '2': 'Double bogey', '3': 'Triple bogey or worse' };
+
+/* ---------------- helpers ---------------- */
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+function now() { return new Date().toISOString(); }
+function todayISO() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function fmtDate(iso, withYear) {
+  if (!iso) return '';
+  var p = iso.split('-'); var d = new Date(+p[0], +p[1] - 1, +p[2]);
+  var o = { month: 'short', day: 'numeric' }; if (withYear) o.year = 'numeric';
+  return d.toLocaleDateString(undefined, o);
+}
+function rel(v) { return v == null ? '–' : v > 0 ? '+' + v : v === 0 ? 'E' : String(v); }
+function relDec(v) { if (v == null || isNaN(v)) return '–'; var r = Math.round(v * 10) / 10; return r > 0 ? '+' + r.toFixed(1) : r === 0 ? 'E' : r.toFixed(1); }
+function dec(v, n) { if (v == null || isNaN(v)) return '–'; return (Math.round(v * Math.pow(10, n || 1)) / Math.pow(10, n || 1)).toFixed(n == null ? 1 : n); }
+function pct(a, b) { return b ? Math.round(a / b * 100) + '%' : '–'; }
+function range(a, b) { var o = []; for (var i = a; i <= b; i++) o.push(i); return o; }
+function svgArrow(p) { return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + p + '"></path></svg>'; }
+var ICON = {
+  back: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>',
+  next: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>',
+  check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>',
+  reset: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"></path><path d="M3 4v5h5"></path></svg>',
+  play: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V4"></path><path d="M6 4l11 4-11 4"></path></svg>',
+  list: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"></path></svg>',
+  chart: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"></path><path d="M7 15l4-4 3 3 6-6"></path></svg>',
+  gear: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>'
+};
+
+/* ---------------- storage ---------------- */
+function blankDb() { return { v: 1, settings: { apiKey: '', gistToken: '', gistId: '', lastSync: null }, courses: {}, rounds: [], deleted: {}, activeId: null }; }
+function loadDb() {
+  try {
+    var raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      var d = JSON.parse(raw);
+      var b = blankDb();
+      d.settings = Object.assign(b.settings, d.settings || {});
+      d.courses = d.courses || {}; d.rounds = d.rounds || []; d.deleted = d.deleted || {};
+      return d;
+    }
+  } catch (e) { /* fall through */ }
+  return blankDb();
+}
+var db = loadDb();
+var STORAGE_WARN = (function () {
+  try { localStorage.setItem('faults.probe', '1'); localStorage.removeItem('faults.probe'); }
+  catch (e) { return 'This browser is blocking storage (private mode or a file viewer).'; }
+  if (!/^https?:$/.test(location.protocol)) return 'The app is open as a file, and many phones wipe a file\u2019s storage when it closes.';
+  return '';
+})();
+function save() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(db)); }
+  catch (e) { toast('Could not save on this device — storage may be full.'); }
+}
+function touch(r) { r.updatedAt = now(); save(); }
+function roundById(id) { for (var i = 0; i < db.rounds.length; i++) if (db.rounds[i].id === id) return db.rounds[i]; return null; }
+
+/* ---------------- hole logic ---------------- */
+function flags(h) {
+  var d = h.delta;
+  if (d == null) return {};
+  var bogey = d >= 1;
+  return {
+    double: d >= 2,
+    p5: bogey && (h.par != null ? h.par === 5 : !!h.f.p5),
+    inside: bogey && !!h.f.inside,
+    updown: !!h.f.updown,
+    putts: !!h.f.putts
+  };
+}
+function faultCount(h) { var f = flags(h), n = 0; FAULTS.forEach(function (x) { if (f[x.id]) n++; }); return n; }
+function linkedP5(h) { return h.p5Linked && flags(h).double; }
+function isOn(h, k) {
+  if (k.indexOf('p5.') === 0 && linkedP5(h)) return !!h.sel['double.' + k.slice(3)];
+  return !!h.sel[k];
+}
+function getVal(h, k) {
+  if (k.indexOf('p5.') === 0 && linkedP5(h)) return h.sel['double.' + k.slice(3)];
+  return h.sel[k];
+}
+function clearPrefix(sel, p) { Object.keys(sel).forEach(function (k) { if (k === p || k.indexOf(p + '.') === 0) delete sel[k]; }); }
+function materialize(h, k) {
+  if (k.indexOf('p5.') !== 0 || !linkedP5(h)) return;
+  clearPrefix(h.sel, 'p5');
+  Object.keys(h.sel).forEach(function (s) { if (s.indexOf('double.') === 0) h.sel['p5.' + s.slice(7)] = h.sel[s]; });
+  h.p5Linked = false;
+}
+function setDelta(h, v) {
+  var before = flags(h);
+  h.delta = v;
+  var after = flags(h);
+  FAULTS.forEach(function (x) {
+    if (before[x.id] && !after[x.id]) {
+      clearPrefix(h.sel, x.id);
+      if (x.id === 'p5' || x.id === 'inside') h.f[x.id] = false;
+      if (x.id === 'p5') h.p5Linked = false;
+    }
+  });
+  if (!before.p5 && after.p5) h.p5Linked = true;
+}
+function toggleFault(h, id) {
+  h.f[id] = !h.f[id];
+  if (!h.f[id]) { clearPrefix(h.sel, id); if (id === 'p5') h.p5Linked = false; }
+  else if (id === 'p5') h.p5Linked = true;
+}
+function visit(h) { if (h.delta == null) { h.delta = 0; } }
+function blankHole(n, th) {
+  return { n: n, par: th && th.par != null ? th.par : null, yards: th && th.yards != null ? th.yards : null, hcp: th && th.hcp != null ? th.hcp : null, delta: null, f: {}, sel: {}, p5Linked: false };
+}
+function playedHoles(r) { return r.holes.filter(function (h) { return h.delta != null; }); }
+function roundStats(r) {
+  var ph = playedHoles(r), score = 0, faults = 0, faultHoles = 0;
+  ph.forEach(function (h) { score += h.delta; var c = faultCount(h); faults += c; if (c) faultHoles++; });
+  return { played: ph.length, score: score, faults: faults, faultHoles: faultHoles };
+}
+function sideLabel(s) { return s === 'front' ? 'Front 9' : s === 'back' ? 'Back 9' : '18 holes'; }
+
+/* ---------------- course API ---------------- */
+function apiGet(path) {
+  var key = (db.settings.apiKey || '').trim();
+  if (!key) return Promise.reject(new Error('Add your GolfCourseAPI key in Settings first.'));
+  return fetch(API + path, { headers: { Authorization: 'Key ' + key } }).then(function (r) {
+    if (r.status === 401 || r.status === 403) throw new Error('The course service rejected your API key. Check it in Settings.');
+    if (r.status === 429) throw new Error('Daily course-lookup limit reached. Courses you have already loaded still work.');
+    if (!r.ok) throw new Error('Course service error (' + r.status + ').');
+    return r.json();
+  }, function () {
+    throw new Error('Couldn’t reach the course service. Check your connection and try again.');
+  });
+}
+function asList(v) { if (!v) return []; if (Array.isArray(v)) return v; if (typeof v === 'object') return Object.keys(v).map(function (k) { return v[k]; }); return []; }
+function normTees(course) {
+  var out = [], t = (course && course.tees) || {};
+  function add(list, g) {
+    asList(list).forEach(function (x, i) {
+      if (!x || typeof x !== 'object') return;
+      var holes = asList(x.holes).map(function (h, j) { h = h || {}; return { n: j + 1, par: h.par != null ? h.par : null, yards: h.yardage != null ? h.yardage : null, hcp: h.handicap != null ? h.handicap : null }; });
+      out.push({ key: g + ':' + i, gender: g, name: x.tee_name || 'Tee ' + (i + 1), yards: x.total_yards, rating: x.course_rating, slope: x.slope_rating, par: x.par_total, holes: holes, count: x.number_of_holes || holes.length });
+    });
+  }
+  if (Array.isArray(t)) add(t, 'male');
+  else { add(t.male, 'male'); add(t.female, 'female'); }
+  return out;
+}
+function courseTitle(c) {
+  if (!c) return 'Round';
+  var club = c.club_name || '', name = c.course_name || '';
+  if (club && name && club.toLowerCase() !== name.toLowerCase()) return club + ' · ' + name;
+  return club || name || 'Course';
+}
+function courseWhere(c) { var l = (c && c.location) || {}; return [l.city, l.state, l.country].filter(Boolean).join(', '); }
+function cacheCourse(c) { if (c && c.id != null) { db.courses[c.id] = Object.assign({}, c, { _cachedAt: now() }); save(); } }
+
+/* ---------------- ui state ---------------- */
+var ui = { screen: db.activeId && roundById(db.activeId) ? 'home' : 'home', roundId: null, setup: null, ins: { range: 10, course: 'all' }, busy: false };
+var app = document.getElementById('app');
+function go(screen, extra) { Object.assign(ui, extra || {}); ui.screen = screen; render(); window.scrollTo(0, 0); }
+var toastTimer;
+function toast(msg) {
+  var t = document.getElementById('toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 3200);
+}
+
+function tabs(active) {
+  var items = [['home', 'Play', ICON.play], ['rounds', 'Rounds', ICON.list], ['insights', 'Insights', ICON.chart], ['settings', 'Settings', ICON.gear]];
+  return '<nav class="tabs" aria-label="Main"><div class="in">' + items.map(function (t) {
+    return '<button data-act="tab" data-s="' + t[0] + '" class="' + (active === t[0] ? 'on' : '') + '"' + (active === t[0] ? ' aria-current="page"' : '') + '>' + t[2] + t[1] + '</button>';
+  }).join('') + '</div></nav>';
+}
+
+/* ---------------- screens: home ---------------- */
+function roundItem(r) {
+  var s = roundStats(r);
+  var right = '<div style="text-align:right"><div class="num" style="font-size:24px;line-height:1">' + (s.played ? rel(s.score) : '–') + '</div><div class="s" style="font-size:12px;color:var(--orange-ink)">' + s.faults + ' fault' + (s.faults === 1 ? '' : 's') + '</div></div>';
+  var badge = r.finished ? '' : ' <span class="pill green">In progress</span>';
+  return '<button class="item" data-act="openRound" data-id="' + r.id + '"><div class="grow"><div class="t">' + esc(r.courseName || 'Round') + badge + '</div><div class="s">' + esc(fmtDate(r.date, true)) + ' · ' + sideLabel(r.side) + (r.teeName ? ' · ' + esc(r.teeName) : '') + ' · ' + s.played + '/' + r.holes.length + ' holes</div></div>' + right + '</button>';
+}
+function sortedRounds() { return db.rounds.slice().sort(function (a, b) { return (b.date + b.createdAt).localeCompare(a.date + a.createdAt); }); }
+function screenHome() {
+  var active = db.activeId && roundById(db.activeId);
+  if (active && active.finished) { db.activeId = null; active = null; }
+  var h = '<header class="topbar"><div class="title">Faults</div></header>';
+  if (STORAGE_WARN) h += '<div class="section"><div class="err"><strong>Your rounds may not be saved.</strong> ' + STORAGE_WARN + ' Use Settings → Export file or Gist sync to keep a backup.</div></div>';
+  if (active) {
+    var cur = active.holes[active.cur || 0];
+    h += '<div class="section"><div class="card stack" style="border-color:var(--green-line);background:var(--green-soft)"><div class="cap" style="color:var(--green)">Round in progress</div><div style="font-weight:600;font-size:17px">' + esc(active.courseName) + '</div><div class="hint">' + esc(fmtDate(active.date)) + ' · ' + sideLabel(active.side) + ' · on hole ' + cur.n + '</div><button class="btn green block" data-act="resume">Resume round</button></div></div>';
+  }
+  h += '<div class="section"><button class="btn ' + (active ? '' : 'primary') + ' block" data-act="newRound">Start a new round</button></div>';
+  var data = db.rounds.filter(function (r) { return playedHoles(r).length; });
+  if (data.length) {
+    var last = sortedRounds().filter(function (r) { return playedHoles(r).length; }).slice(0, 5);
+    var holes = 0, faults = 0, clean = 0, score = 0;
+    last.forEach(function (r) { playedHoles(r).forEach(function (x) { holes++; var c = faultCount(x); faults += c; if (!c) clean++; score += x.delta; }); });
+    h += '<div class="section"><div class="cap">Last ' + last.length + ' round' + (last.length === 1 ? '' : 's') + '</div><div class="tiles">' +
+      '<div class="tile warm"><div class="k">Faults per 18</div><div class="v">' + dec(faults / holes * 18) + '</div></div>' +
+      '<div class="tile"><div class="k">Clean holes</div><div class="v">' + pct(clean, holes) + '</div></div></div></div>';
+    h += '<div class="section"><div class="row between"><div class="cap">Recent rounds</div><button class="iconbtn" data-act="tab" data-s="rounds">All</button></div><div class="list">' + sortedRounds().slice(0, 3).map(roundItem).join('') + '</div></div>';
+  } else {
+    h += '<div class="empty">Rounds you play show up here, along with your fault trends.</div>';
+  }
+  return h + tabs('home');
+}
+
+/* ---------------- screens: setup ---------------- */
+function screenSetup() {
+  var S = ui.setup;
+  var h = '<header class="topbar"><button class="iconbtn" data-act="setupBack" aria-label="Back">' + ICON.back + '</button><div class="title" style="flex:1">New round</div></header>';
+  if (S.step === 'search') {
+    var hasKey = !!(db.settings.apiKey || '').trim();
+    if (hasKey) {
+      h += '<div class="section"><div class="field"><label for="q">Find a course</label><div class="row"><input id="q" class="input" type="search" placeholder="Course or club name" value="' + esc(S.query) + '" autocomplete="off" enterkeyhint="search"><button class="btn primary" data-act="search" style="flex:none">' + (S.loading ? '<span class="spin" aria-label="Searching"></span>' : 'Search') + '</button></div></div>';
+      if (S.error) h += '<div class="err">' + esc(S.error) + '</div>';
+      if (S.results) {
+        h += S.results.length ? '<div class="list">' + S.results.map(function (c, i) {
+          return '<button class="item" data-act="pickResult" data-i="' + i + '"><div class="grow"><div class="t">' + esc(courseTitle(c)) + '</div><div class="s">' + esc(courseWhere(c)) + '</div></div>' + ICON.next + '</button>';
+        }).join('') + '</div>' : '<div class="empty">No courses matched. Try the club name or a shorter search.</div>';
+      }
+      h += '</div>';
+    } else {
+      h += '<div class="section"><div class="card stack"><div style="font-weight:600">Load course pars and tees</div><div class="hint">Add a free GolfCourseAPI key in Settings to search courses. You can still play without course data.</div><button class="btn block" data-act="tab" data-s="settings">Add API key</button></div></div>';
+    }
+    var cached = Object.keys(db.courses).map(function (k) { return db.courses[k]; }).sort(function (a, b) { return (b._usedAt || b._cachedAt || '').localeCompare(a._usedAt || a._cachedAt || ''); });
+    if (cached.length) {
+      h += '<div class="section"><div class="cap">Saved courses</div><div class="list">' + cached.slice(0, 8).map(function (c) {
+        return '<button class="item" data-act="pickCached" data-id="' + esc(c.id) + '"><div class="grow"><div class="t">' + esc(courseTitle(c)) + '</div><div class="s">' + esc(courseWhere(c)) + ' · no lookup needed</div></div>' + ICON.next + '</button>';
+      }).join('') + '</div></div>';
+    }
+    h += '<div class="section"><div class="cap">Or play without course data</div><div class="card stack"><div class="field"><label for="manualName">Course name (optional)</label><input id="manualName" class="input" value="' + esc(S.manualName || '') + '" placeholder="e.g. Muni"></div><div class="hint">No pars or yardages. Bogey+ on a par 5 is flagged by hand.</div><button class="btn block" data-act="manual">Continue</button></div></div>';
+  }
+  if (S.step === 'tees') {
+    var tees = normTees(S.course);
+    h += '<div class="section"><div style="font-weight:600;font-size:17px">' + esc(courseTitle(S.course)) + '</div><div class="hint">' + esc(courseWhere(S.course)) + '</div></div>';
+    if (!tees.length) {
+      h += '<div class="section"><div class="err">This course has no tee data. You can still play it without pars.</div><button class="btn block" data-act="noTees">Play without pars</button></div>';
+    } else {
+      ['male', 'female'].forEach(function (g) {
+        var list = tees.filter(function (t) { return t.gender === g; });
+        if (!list.length) return;
+        h += '<div class="section"><div class="cap">' + (g === 'male' ? "Men's tees" : "Women's tees") + '</div><div class="list">' + list.map(function (t) {
+          var meta = [t.yards ? t.yards + ' yds' : null, t.par ? 'Par ' + t.par : null, t.rating ? t.rating + ' / ' + (t.slope || '–') : null, t.count && t.count !== 18 ? t.count + ' holes' : null].filter(Boolean).join(' · ');
+          return '<button class="item" data-act="pickTee" data-k="' + t.key + '"><div class="grow"><div class="t">' + esc(t.name) + '</div><div class="s">' + esc(meta) + '</div></div>' + ICON.next + '</button>';
+        }).join('') + '</div></div>';
+      });
+    }
+  }
+  if (S.step === 'side') {
+    var tee = S.tee, nh = tee ? tee.holes.length : 18;
+    var sides = [['front', 'Front 9'], ['back', 'Back 9'], ['18', '18']];
+    h += '<div class="section"><div style="font-weight:600;font-size:17px">' + esc(S.course ? courseTitle(S.course) : (S.manualName || 'Round')) + '</div>' + (tee ? '<div class="hint">' + esc(tee.name) + ' tees' + (tee.yards ? ' · ' + tee.yards + ' yds' : '') + '</div>' : '') + '</div>';
+    h += '<div class="section"><div class="cap">Holes</div><div class="seg" style="grid-template-columns:repeat(3,minmax(0,1fr))">' + sides.map(function (s) {
+      var dis = tee && nh < 18 && s[0] !== 'front';
+      return '<button data-act="pickSide" data-v="' + s[0] + '" class="' + (S.side === s[0] ? 'on' : '') + '"' + (dis ? ' disabled' : '') + ' aria-pressed="' + (S.side === s[0]) + '">' + s[1] + '</button>';
+    }).join('') + '</div>' + (tee && nh < 18 ? '<div class="hint">These tees only have ' + nh + ' holes of data.</div>' : '') + '</div>';
+    h += '<div class="section"><div class="field"><label for="rdate">Date</label><input id="rdate" class="input" type="date" value="' + esc(S.date) + '"></div></div>';
+    h += '<div class="section"><button class="btn primary block" data-act="startRound">Start round</button></div>';
+  }
+  return h;
+}
+
+/* ---------------- screens: hole ---------------- */
+function padHTML(h, k) {
+  return '<div class="pad" role="group" aria-label="Direction">' + DIRS.map(function (d) {
+    var on = isOn(h, k + '.dir.' + d[0]);
+    return '<button class="' + (on ? 'on' : '') + '" style="grid-column:' + d[2] + ';grid-row:' + d[3] + '" data-act="sel" data-k="' + k + '.dir.' + d[0] + '" aria-label="' + d[1] + '" aria-pressed="' + on + '">' + svgArrow(d[4]) + '</button>';
+  }).join('') + '<span class="pdot" style="grid-column:2;grid-row:2" aria-hidden="true"></span></div>';
+}
+function panelHTML(h, fid, tree, fl) {
+  var out = '';
+  if (fid === 'p5' && linkedP5(h)) out += '<div class="note">Matching your double answers · tap any to change just this one</div>';
+  if (tree.mode === 'pick') {
+    out += '<div class="grp"><div class="plabel">' + tree.prompt + '</div><div class="l1">';
+    tree.items.forEach(function (it) {
+      var k = fid + '.' + it.id, on = isOn(h, k);
+      out += '<button class="chip dark ' + (on ? 'on' : '') + '" data-act="sel" data-k="' + k + '" aria-pressed="' + on + '">' + it.label + '</button>';
+    });
+    if (tree.puttLink && fl.putts) out += '<button class="chip linked" disabled aria-pressed="true" title="From 3+ putts">Putts</button>';
+    out += '</div></div>';
+  }
+  var first = tree.mode === 'sections';
+  tree.items.forEach(function (it) {
+    var k = fid + '.' + it.id;
+    if (tree.mode === 'pick' && !isOn(h, k)) return;
+    var opts = it.opts || [], body = '', extra = '';
+    if (it.dir) body += padHTML(h, k);
+    if (opts.length) {
+      body += '<div class="opts">' + opts.map(function (o) {
+        var of = o[2] || {};
+        if (of.linkPutts && fl.putts) return '<button class="chip linked" disabled aria-pressed="true">' + o[1] + ' · 3+ putts</button>';
+        var on = it.single ? getVal(h, k) === o[0] : isOn(h, k + '.' + o[0]);
+        var act = it.single ? 'data-act="one" data-k="' + k + '" data-v="' + o[0] + '"' : 'data-act="sel" data-k="' + k + '.' + o[0] + '"';
+        return '<button class="chip ' + (on ? 'on' : '') + '" ' + act + ' aria-pressed="' + on + '">' + esc(o[1]) + '</button>';
+      }).join('') + '</div>';
+      opts.forEach(function (o) {
+        var of = o[2] || {};
+        if (of.dir && isOn(h, k + '.' + o[0])) extra += '<div class="odir">' + padHTML(h, k + '.' + o[0]) + '<span class="slabel">' + o[1] + ' · direction</span></div>';
+      });
+    }
+    var title = it.dir && !opts.length ? it.label + ' · direction' : it.label;
+    out += '<div class="sect' + (first ? ' first' : '') + '"><div class="slabel">' + title + '</div><div class="srow">' + body + '</div>' + extra + '</div>';
+    first = false;
+  });
+  return '<div class="panel">' + out + '</div>';
+}
+function faultHTML(h, def, fl) {
+  var on = !!fl[def.id], bogey = h.delta != null && h.delta >= 1, parKnown = h.par != null;
+  var auto = false, disabled = false, sub = '';
+  if (def.id === 'double') { auto = true; sub = 'Flagged from your score'; }
+  if (def.id === 'p5') {
+    if (parKnown) {
+      auto = h.par === 5; disabled = h.par !== 5;
+      sub = h.par === 5 ? (bogey ? 'Par 5 · flagged from your score' : 'Par 5 · flags on bogey or worse') : 'Not a par 5';
+    } else { disabled = !bogey; sub = bogey ? 'Tap if this hole is a par 5' : 'Only applies on bogey or worse'; }
+  }
+  if (def.id === 'inside') { disabled = !bogey; sub = bogey ? 'Approach from 140 yds or closer' : 'Only applies on bogey or worse'; }
+  if (def.id === 'updown') sub = 'Missed a simple up-and-down';
+  if (def.id === 'putts') sub = '3 or more putts on the green';
+  var locked = auto || disabled;
+  var s = '<div class="fault"><button class="frow' + (on ? ' on' : '') + '" ' + (locked ? 'disabled' : 'data-act="fault" data-f="' + def.id + '"') + ' aria-pressed="' + on + '">' +
+    '<span class="box">' + (on ? ICON.check : '') + '</span><span class="ftext"><span class="ft">' + def.title + '</span><span class="fs">' + sub + '</span></span>' +
+    (auto ? '<span class="pill green">AUTO</span>' : '') + '</button>';
+  if (on) s += panelHTML(h, def.id, def.tree, fl);
+  return s + '</div>';
+}
+function screenHole() {
+  var r = roundById(ui.roundId);
+  if (!r) return screenHome();
+  var i = r.cur || 0, h = r.holes[i];
+  visit(h);
+  var fl = flags(h), cnt = faultCount(h);
+  var thru = 0, score = 0, tot = 0;
+  r.holes.forEach(function (x, j) { if (x.delta != null && j !== i) { thru++; score += x.delta; } if (x.delta != null) tot += faultCount(x); });
+  var out = '<header class="topbar"><button class="iconbtn" data-act="exitRound">' + ICON.back + 'Exit</button><div style="flex:1;min-width:0;text-align:center"><div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(r.courseName) + '</div><div class="hint">' + (thru ? '<strong style="color:var(--ink)">' + rel(score) + '</strong> thru ' + thru + ' · ' : '') + '<strong style="color:var(--orange)">' + tot + '</strong> fault' + (tot === 1 ? '' : 's') + '</div></div><button class="iconbtn" data-act="reset" aria-label="Reset hole to par and clear all faults">' + ICON.reset + 'Reset</button></header>';
+  var meta = [];
+  if (h.par != null) meta.push('<strong>Par ' + h.par + '</strong>');
+  if (h.yards != null) meta.push(h.yards + ' yds');
+  if (h.hcp != null) meta.push('HCP ' + h.hcp);
+  out += '<div class="holehead"><span></span><div class="holeno">Hole ' + h.n + '</div><span></span></div><div class="holemeta">' + meta.join(' · ') + '</div>';
+  out += '<div class="strip" style="grid-template-columns:repeat(' + r.holes.length + ',minmax(0,1fr))">' + r.holes.map(function (x, j) {
+    var c = j === i ? 'cur' : x.delta == null ? '' : faultCount(x) ? 'bad' : 'done';
+    return '<button class="' + c + '" data-act="goHole" data-i="' + j + '" aria-label="Hole ' + x.n + '">' + x.n + '</button>';
+  }).join('') + '</div>';
+  var d = h.delta;
+  out += '<div class="section"><div class="cap">Score</div><div class="scores">' + [-2, -1, 0, 1, 2, 3].map(function (v) {
+    var on = v === 3 ? d >= 3 : v === d;
+    var lbl = v === 3 ? '3+' : v === 0 ? 'E' : String(v);
+    if (h.par != null && v !== 3) lbl = v === 0 ? 'E' : String(v);
+    return '<button class="sbtn' + (on ? ' on' : '') + '" data-act="score" data-v="' + v + '" aria-label="' + SCORE_NAMES[String(v)] + (h.par != null ? ', ' + (v === 3 ? (h.par + 3) + ' or more' : (h.par + v)) + ' strokes' : '') + '" aria-pressed="' + on + '">' + lbl + '</button>';
+  }).join('') + '</div>';
+  if (d >= 3) {
+    out += '<div class="high"><div class="lbl">How many over par?</div><div class="scores">' + [3, 4, 5, 6, 7, 8].map(function (v) {
+      var on = v === d;
+      return '<button class="sbtn' + (on ? ' on' : '') + '" data-act="score" data-v="' + v + '" data-exact="1" aria-label="' + (v === 8 ? '8 or more' : v) + ' over par" aria-pressed="' + on + '">' + (v === 8 ? '8+' : v) + '</button>';
+    }).join('') + '</div></div>';
+  }
+  out += '</div>';
+  out += '<div class="section"><div class="row between"><div class="cap">Faults</div><div style="font-size:13px;font-weight:600;color:var(--orange)">' + (cnt === 0 ? 'Clean hole' : cnt === 1 ? '1 this hole' : cnt + ' this hole') + '</div></div>' +
+    FAULTS.map(function (def) { return faultHTML(h, def, fl); }).join('') + '</div>';
+  var prev = r.holes[i - 1], next = r.holes[i + 1];
+  out += '<nav class="navbar" aria-label="Holes"><div class="in"><button class="btn" data-act="prevHole"' + (prev ? '' : ' disabled') + ' aria-label="' + (prev ? 'Go to hole ' + prev.n : 'No previous hole') + '">' + ICON.back + (prev ? '#' + prev.n : '') + '</button>' +
+    (next ? '<button class="btn primary" data-act="nextHole" aria-label="Go to hole ' + next.n + '">#' + next.n + ICON.next + '</button>' : '<button class="btn green" data-act="finish">Finish round</button>') + '</div></nav>';
+  return out;
+}
+
+/* ---------------- screens: summary ---------------- */
+function scorecardHTML(r) {
+  var groups = [];
+  for (var s = 0; s < r.holes.length; s += 9) groups.push(r.holes.slice(s, s + 9));
+  var hasPar = r.holes.some(function (h) { return h.par != null; });
+  return groups.map(function (g, gi) {
+    var lbl = r.holes.length <= 9 ? 'Tot' : gi === 0 ? 'Out' : 'In';
+    var sc = 0, ft = 0, par = 0, any = false;
+    g.forEach(function (h) { if (h.delta != null) { sc += h.delta; any = true; ft += faultCount(h); } if (h.par != null) par += h.par; });
+    var row = function (name, cells, tot, cls) { return '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + name + '</td>' + cells + '<td><strong>' + tot + '</strong></td></tr>'; };
+    var head = '<tr><th>Hole</th>' + g.map(function (h) { return '<th>' + h.n + '</th>'; }).join('') + '<th>' + lbl + '</th></tr>';
+    var parRow = hasPar ? row('Par', g.map(function (h) { return '<td class="muted">' + (h.par != null ? h.par : '') + '</td>'; }).join(''), par || '') : '';
+    var scRow = row('Score', g.map(function (h) { var c = h.delta == null ? '' : h.delta > 0 ? 'over' : h.delta < 0 ? 'under' : ''; return '<td class="' + c + '">' + (h.delta == null ? '' : rel(h.delta)) + '</td>'; }).join(''), any ? rel(sc) : '–');
+    var fRow = row('Faults', g.map(function (h) { var c = h.delta == null ? 0 : faultCount(h); return '<td class="' + (c ? 'fz' : 'dot') + '">' + (h.delta == null ? '' : c ? c : '·') + '</td>'; }).join(''), '<span style="color:var(--orange)">' + ft + '</span>', 'flt');
+    return '<table class="sc"><caption class="sr">Scorecard ' + lbl + '</caption>' + head + parRow + scRow + fRow + '</table>';
+  }).join('');
+}
+function barsHTML(rows, opts) {
+  opts = opts || {};
+  var max = 0; rows.forEach(function (x) { if (x.n > max) max = x.n; });
+  if (!max) return '<div class="hint">Nothing recorded yet.</div>';
+  if (opts.max) max = Math.max(opts.max, max);
+  return '<div class="bars">' + rows.map(function (x) {
+    var w = max ? Math.max(x.n / max * 100, x.n ? 3 : 0) : 0;
+    return '<div class="bar"><span class="l" title="' + esc(x.label) + '">' + esc(x.label) + '</span><span class="tr"><span class="fl" style="display:block;width:' + w + '%"></span></span><span class="n">' + x.n + (x.sub ? '<small>' + x.sub + '</small>' : '') + '</span></div>';
+  }).join('') + '</div>';
+}
+function screenSummary() {
+  var r = roundById(ui.roundId);
+  if (!r) return screenRounds();
+  var s = roundStats(r);
+  var h = '<header class="topbar"><button class="iconbtn" data-act="tab" data-s="' + (ui.from || 'rounds') + '" aria-label="Back">' + ICON.back + '</button><div style="flex:1;min-width:0"><div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(r.courseName) + '</div><div class="hint">' + esc(fmtDate(r.date, true)) + ' · ' + sideLabel(r.side) + (r.teeName ? ' · ' + esc(r.teeName) : '') + '</div></div></header>';
+  var view = ui.view === 'card' ? 'card' : 'insights';
+  h += '<div class="section"><div class="seg" role="tablist" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button role="tab" data-act="view" data-v="insights" class="' + (view === 'insights' ? 'on' : '') + '" aria-selected="' + (view === 'insights') + '">Round insights</button><button role="tab" data-act="view" data-v="card" class="' + (view === 'card' ? 'on' : '') + '" aria-selected="' + (view === 'card') + '">Scorecard</button></div></div>';
+  if (view === 'insights') {
+    h += playedHoles(r).length ? insightsBody([r], { round: true }) : '<div class="empty">No holes entered yet.</div>';
+  } else {
+  h += '<div class="section"><div class="tiles"><div class="tile"><div class="k">Score to par</div><div class="v">' + (s.played ? rel(s.score) : '–') + '</div><div class="u">' + s.played + ' of ' + r.holes.length + ' holes' + (r.finished ? '' : ' · in progress') + '</div></div>' +
+    '<div class="tile warm"><div class="k">Faults</div><div class="v">' + s.faults + '</div><div class="u">on ' + s.faultHoles + ' hole' + (s.faultHoles === 1 ? '' : 's') + '</div></div></div></div>';
+  h += '<div class="section"><div class="cap">Scorecard</div>' + scorecardHTML(r) + '</div>';
+  }
+  h += '<div class="section"><div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-act="editRound">' + (r.finished ? 'Edit holes' : 'Resume') + '</button><button data-act="tab" data-s="home">Done</button></div><button class="btn danger block" data-act="deleteRound">Delete round</button></div>';
+  return h + tabs('rounds');
+}
+
+/* ---------------- screens: rounds ---------------- */
+function screenRounds() {
+  var h = '<header class="topbar"><div class="title">Rounds</div><button class="iconbtn" data-act="newRound">New</button></header>';
+  var rs = sortedRounds();
+  h += rs.length ? '<div class="section list">' + rs.map(roundItem).join('') + '</div>' : '<div class="empty">No rounds yet. Start one from Play.</div>';
+  return h + tabs('rounds');
+}
+
+/* ---------------- insights ---------------- */
+function bump(C, k) { C[k] = (C[k] || 0) + 1; }
+function countCauses(holes) {
+  var C = {};
+  holes.forEach(function (h) {
+    var fl = flags(h);
+    FAULTS.forEach(function (f) {
+      if (!fl[f.id]) return;
+      var t = f.tree;
+      if (t.puttLink && fl.putts) bump(C, f.id + '.putts');
+      if (f.id === 'putts') {
+        var p1 = getVal(h, 'putts.first'), p2 = getVal(h, 'putts.second');
+        if (p2 === 'le3') bump(C, 'putts.short3');
+        else if (p2 && p1) bump(C, 'putts.lag=' + p1);
+      }
+      t.items.forEach(function (it) {
+        var k = f.id + '.' + it.id;
+        if (t.mode === 'pick') { if (!isOn(h, k)) return; bump(C, k); }
+        if (it.dir) DIRS.forEach(function (d) { if (isOn(h, k + '.dir.' + d[0])) bump(C, k + '.dir.' + d[0]); });
+        (it.opts || []).forEach(function (o) {
+          var of = o[2] || {};
+          if (it.single) { if (getVal(h, k) === o[0]) bump(C, k + '=' + o[0]); return; }
+          var on = (of.linkPutts && fl.putts) || isOn(h, k + '.' + o[0]);
+          if (on) bump(C, k + '.' + o[0]);
+          if (of.dir && isOn(h, k + '.' + o[0])) DIRS.forEach(function (d) { if (isOn(h, k + '.' + o[0] + '.dir.' + d[0])) bump(C, k + '.' + o[0] + '.dir.' + d[0]); });
+        });
+      });
+    });
+  });
+  return C;
+}
+function topCauses(C) {
+  // plain-language list of the most common specific causes
+  var out = [];
+  FAULTS.forEach(function (f) {
+    var t = f.tree;
+    if (f.id === 'putts') {
+      PUTTS.items[0].opts.forEach(function (o) { var n = C['putts.lag=' + o[0]]; if (n) out.push({ label: '3+ putts · 1st putt ' + o[1] + ', 2nd outside 3 ft', n: n }); });
+      if (C['putts.short3']) out.push({ label: '3+ putts · missed from 3 ft or closer', n: C['putts.short3'] });
+      return;
+    }
+    if (t.puttLink && C[f.id + '.putts']) out.push({ label: f.short + ' · Putts', n: C[f.id + '.putts'] });
+    t.items.forEach(function (it) {
+      var k = f.id + '.' + it.id;
+      var opts = it.opts || [], anyChild = false;
+      opts.forEach(function (o) {
+        var n = it.single ? C[k + '=' + o[0]] : C[k + '.' + o[0]];
+        if (n) { anyChild = true; out.push({ label: f.short + ' · ' + (t.mode === 'pick' ? it.label + ' ' : it.label + ': ') + o[1].toLowerCase(), n: n }); }
+      });
+      if (t.mode === 'pick' && C[k] && !anyChild) out.push({ label: f.short + ' · ' + it.label, n: C[k] });
+    });
+  });
+  return out.sort(function (a, b) { return b.n - a.n; });
+}
+function compassHTML(C, k, center) {
+  var get = function (d) { return C[k + '.dir.' + d] || 0; };
+  var cell = function (d, c, r) { var n = get(d[0]); return '<span style="grid-column:' + c + ';grid-row:' + r + '" class="' + (n ? '' : 'z') + '" aria-label="' + d[1] + ': ' + n + '">' + svgArrow(d[4]).replace('width="18" height="18"', 'width="13" height="13"') + n + '</span>'; };
+  return '<div class="compass" role="img" aria-label="Miss direction counts">' + cell(DIRS[0], 2, 1) + cell(DIRS[1], 1, 2) + '<span class="c" style="grid-column:2;grid-row:2">' + esc(center || '') + '</span>' + cell(DIRS[2], 3, 2) + cell(DIRS[3], 2, 3) + '</div>';
+}
+function dirTotal(C, k) { var n = 0; DIRS.forEach(function (d) { n += C[k + '.dir.' + d[0]] || 0; }); return n; }
+function causeSection(f, C, total) {
+  var t = f.tree, out = '';
+  if (t.mode === 'pick') {
+    var rows = t.items.map(function (it) { return { label: it.label, n: C[f.id + '.' + it.id] || 0 }; });
+    if (t.puttLink) rows.push({ label: 'Putts', n: C[f.id + '.putts'] || 0 });
+    out += '<div class="slabel">' + t.prompt + '</div>' + barsHTML(rows);
+    var minis = '';
+    t.items.forEach(function (it) {
+      var k = f.id + '.' + it.id;
+      if (!C[k]) return;
+      var inner = '';
+      if (it.opts) inner += barsHTML(it.opts.map(function (o) { return { label: o[1], n: C[k + '.' + o[0]] || 0 }; }));
+      var dirs = it.dir && dirTotal(C, k) ? compassHTML(C, k, it.label) : '';
+      minis += '<div class="mini"><div class="slabel">' + it.label + ' · ' + C[k] + '</div><div class="row" style="align-items:flex-start;gap:12px">' + dirs + '<div style="flex:1;min-width:0">' + inner + '</div></div></div>';
+    });
+    if (minis) out += '<div class="stack">' + minis + '</div>';
+  } else if (f.id === 'putts') {
+    var first = PUTTS.items[0];
+    var lag = first.opts.map(function (o) { return { label: o[1], n: C['putts.lag=' + o[0]] || 0 }; });
+    var lagN = lag.reduce(function (a, x) { return a + x.n; }, 0), s3 = C['putts.short3'] || 0;
+    out += '<div class="mini"><div class="slabel">1st putt, when the 2nd putt was outside 3 ft · ' + lagN + '</div>' + barsHTML(lag) + '</div>';
+    out += '<div class="row between" style="padding-top:10px;border-top:1px solid var(--rule2)"><span class="slabel">Missed from 3 ft or closer</span><span class="num" style="font-size:24px;color:' + (s3 ? 'var(--orange)' : 'var(--faint)') + '">' + s3 + '</span></div>';
+    var unk = total - lagN - s3;
+    if (unk > 0) out += '<div class="hint">' + unk + ' three-putt' + (unk === 1 ? '' : 's') + ' without both putt distances marked.</div>';
+  } else {
+    t.items.forEach(function (it) {
+      var k = f.id + '.' + it.id;
+      var rows = it.opts.map(function (o) { return { label: o[1], n: (it.single ? C[k + '=' + o[0]] : C[k + '.' + o[0]]) || 0 }; });
+      out += '<div class="mini"><div class="slabel">' + it.label + '</div>' + barsHTML(rows) + '</div>';
+      it.opts.forEach(function (o) {
+        var of = o[2] || {};
+        if (of.dir && dirTotal(C, k + '.' + o[0])) out += '<div class="row" style="gap:12px">' + compassHTML(C, k + '.' + o[0], '') + '<span class="slabel">' + o[1] + ' · direction</span></div>';
+      });
+    });
+  }
+  return '<div class="sub"><div class="subh"><span class="t">' + f.title + '</span><span class="hint">' + total + ' time' + (total === 1 ? '' : 's') + '</span></div>' + out + '</div>';
+}
+function niceStep(raw) { var p = Math.pow(10, Math.floor(Math.log10(raw || 1))); var m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
+function lineChart(id, pts, yLabelFmt) {
+  var W = 340, H = 180, L = 36, R = 12, T = 12, B = 28;
+  var ys = pts.map(function (p) { return p.y; });
+  var lo = Math.min.apply(null, ys.concat([0])), hi = Math.max.apply(null, ys);
+  if (hi <= lo) hi = lo + 1;
+  var step = niceStep((hi - lo) / 3); lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+  var x = function (i) { return pts.length === 1 ? L + (W - L - R) / 2 : L + i * (W - L - R) / (pts.length - 1); };
+  var y = function (v) { return T + (H - T - B) * (1 - (v - lo) / (hi - lo)); };
+  var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Trend chart">';
+  for (var v = lo; v <= hi + 1e-9; v += step) {
+    s += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="' + (Math.abs(v) < 1e-9 ? '#B8B0A2' : '#ECE7DD') + '" stroke-width="1"></line>';
+    s += '<text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" text-anchor="end" font-size="11" fill="#5B6360">' + yLabelFmt(v) + '</text>';
+  }
+  var path = pts.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p.y).toFixed(1); }).join(' ');
+  s += '<path d="' + path + '" fill="none" stroke="#C2410C" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>';
+  pts.forEach(function (p, i) { s += '<circle cx="' + x(i) + '" cy="' + y(p.y) + '" r="4" fill="#C2410C" stroke="#FFFFFF" stroke-width="2"></circle>'; });
+  pts.forEach(function (p, i) { s += '<circle cx="' + x(i) + '" cy="' + y(p.y) + '" r="14" fill="transparent" data-tip="' + esc(p.tip) + '" data-tipfor="' + id + '" style="cursor:pointer"></circle>'; });
+  s += '<text x="' + L + '" y="' + (H - 6) + '" font-size="11" fill="#5B6360">' + esc(pts[0].x) + '</text>';
+  if (pts.length > 1) s += '<text x="' + (W - R) + '" y="' + (H - 6) + '" font-size="11" fill="#5B6360" text-anchor="end">' + esc(pts[pts.length - 1].x) + '</text>';
+  s += '</svg>';
+  return '<div class="chart">' + s + '<div class="tip" id="' + id + '">Tap a point for details</div></div>';
+}
+function screenInsights() {
+  var h = '<header class="topbar"><div class="title">Insights</div></header>';
+  var all = db.rounds.filter(function (r) { return playedHoles(r).length; });
+  if (!all.length) return h + '<div class="empty">Play a round and your fault patterns will show up here.</div>' + tabs('insights');
+  var courses = {};
+  all.forEach(function (r) { var k = r.courseId != null ? 'c:' + r.courseId : 'n:' + (r.courseName || 'Round'); courses[k] = r.courseName || 'Round'; });
+  var I = ui.ins;
+  if (I.course !== 'all' && !courses[I.course]) I.course = 'all';
+  var rs = all.filter(function (r) { if (I.course === 'all') return true; var k = r.courseId != null ? 'c:' + r.courseId : 'n:' + (r.courseName || 'Round'); return k === I.course; })
+    .sort(function (a, b) { return (a.date + a.createdAt).localeCompare(b.date + b.createdAt); });
+  if (I.range !== 'all') rs = rs.slice(-I.range);
+  h += '<div class="section"><div class="filters">' + [[5, 'Last 5'], [10, 'Last 10'], [20, 'Last 20'], ['all', 'All']].map(function (o) {
+    return '<button class="chip' + (I.range === o[0] ? ' on' : '') + '" data-act="insRange" data-v="' + o[0] + '" aria-pressed="' + (I.range === o[0]) + '">' + o[1] + '</button>';
+  }).join('') + '<select class="select" data-input="insCourse" aria-label="Course"><option value="all">All courses</option>' + Object.keys(courses).map(function (k) { return '<option value="' + esc(k) + '"' + (I.course === k ? ' selected' : '') + '>' + esc(courses[k]) + '</option>'; }).join('') + '</select></div></div>';
+  if (!rs.length) return h + '<div class="empty">No rounds match these filters.</div>' + tabs('insights');
+
+  return h + insightsBody(rs, { course: I.course }) + tabs('insights');
+}
+function insightsBody(rs, opt) {
+  var h = '', trouble = opt.course && opt.course !== 'all';
+  var holes = [], faults = 0, clean = 0, score = 0, faultHoleScore = 0, cleanScore = 0, faultHoles = 0;
+  var byFault = {}; FAULTS.forEach(function (f) { byFault[f.id] = 0; });
+  var byPar = { 3: { h: 0, f: 0 }, 4: { h: 0, f: 0 }, 5: { h: 0, f: 0 } };
+  var holeKey = {};
+  rs.forEach(function (r) {
+    playedHoles(r).forEach(function (x) {
+      holes.push(x);
+      var fl = flags(x), c = faultCount(x);
+      faults += c; score += x.delta;
+      if (c) { faultHoles++; faultHoleScore += x.delta; } else { clean++; cleanScore += x.delta; }
+      FAULTS.forEach(function (f) { if (fl[f.id]) byFault[f.id]++; });
+      if (byPar[x.par]) { byPar[x.par].h++; byPar[x.par].f += c; }
+      if (trouble) { var hk = holeKey[x.n] || (holeKey[x.n] = { n: x.n, par: x.par, plays: 0, f: 0, s: 0 }); hk.plays++; hk.f += c; hk.s += x.delta; }
+    });
+  });
+  var n = holes.length;
+  h += '<div class="section"><div class="cap">' + (opt.round ? n + ' holes played' : rs.length + ' round' + (rs.length === 1 ? '' : 's') + ' · ' + n + ' holes') + '</div><div class="tiles">' +
+    (opt.round ? '<div class="tile warm"><div class="k">Faults</div><div class="v">' + faults + '</div><div class="u">on ' + faultHoles + ' hole' + (faultHoles === 1 ? '' : 's') + '</div></div>'
+      : '<div class="tile warm"><div class="k">Faults per 18</div><div class="v">' + dec(faults / n * 18) + '</div><div class="u">' + dec(faults / n, 2) + ' per hole</div></div>') +
+    '<div class="tile"><div class="k">Clean holes</div><div class="v">' + pct(clean, n) + '</div><div class="u">' + clean + ' of ' + n + '</div></div>' +
+    (opt.round ? '<div class="tile"><div class="k">Score to par</div><div class="v">' + rel(score) + '</div><div class="u">' + n + ' holes</div></div>'
+      : '<div class="tile"><div class="k">Score per 18</div><div class="v">' + relDec(score / n * 18) + '</div><div class="u">to par</div></div>') +
+    '<div class="tile"><div class="k">Over par from fault holes</div><div class="v">' + (score > 0 ? pct(Math.max(faultHoleScore, 0), score) : '–') + '</div><div class="u">' + rel(faultHoleScore) + ' of ' + rel(score) + '</div></div></div></div>';
+
+  // takeaways
+  var C = countCauses(holes);
+  var tk = [];
+  var fr = FAULTS.map(function (f) { return { f: f, n: byFault[f.id] }; }).sort(function (a, b) { return b.n - a.n; });
+  if (fr[0].n) tk.push((opt.round ? 'Your most common fault this round was' : 'Your most common fault is') + ' <strong>' + fr[0].f.short + '</strong>: ' + fr[0].n + ' time' + (fr[0].n === 1 ? '' : 's') + (opt.round ? '.' : ', or ' + dec(fr[0].n / n * 18) + ' per 18.'));
+  if (faultHoles && clean) tk.push('Fault holes average <strong>' + relDec(faultHoleScore / faultHoles) + '</strong> to par; clean holes average <strong>' + relDec(cleanScore / clean) + '</strong>.');
+  var tc = topCauses(C);
+  if (tc.length) tk.push('Top specific cause: <strong>' + esc(tc[0].label) + '</strong> (' + tc[0].n + ').');
+  ['double', 'p5'].forEach(function (fid) {
+    ['tee', 'app'].forEach(function (a) {
+      var k = fid + '.' + a, tot = dirTotal(C, k);
+      if (tot >= 3) {
+        var best = DIRS.slice().sort(function (p, q) { return (C[k + '.dir.' + q[0]] || 0) - (C[k + '.dir.' + p[0]] || 0); })[0];
+        var bn = C[k + '.dir.' + best[0]] || 0;
+        if (bn / tot >= 0.5 && fid === 'double') tk.push('On doubles, your ' + (a === 'tee' ? 'tee shot' : 'approach') + ' misses lean <strong>' + best[1].toLowerCase() + '</strong> (' + bn + ' of ' + tot + ' marked).');
+      }
+    });
+  });
+  if (tk.length) h += '<div class="section"><div class="cap">Takeaways</div><div class="card stack">' + tk.map(function (t) { return '<div class="takeaway"><span>' + t + '</span></div>'; }).join('') + '</div></div>';
+
+  // frequency
+  h += '<div class="section"><div class="cap">How often each fault happens</div><div class="card">' + barsHTML(FAULTS.map(function (f) { return { label: f.short, n: byFault[f.id], sub: pct(byFault[f.id], n) + ' of holes' }; })) + '</div></div>';
+
+  // trends
+  var trs = opt.round ? [] : rs.filter(function (r) { return playedHoles(r).length >= 9; });
+  if (trs.length >= 2) {
+    var tp = trs.map(function (r) { var s = roundStats(r); return { x: fmtDate(r.date), y: s.faults / s.played * 18, tip: fmtDate(r.date, true) + ' · ' + (r.courseName || 'Round') + ' · ' + s.faults + ' fault' + (s.faults === 1 ? '' : 's') + ' in ' + s.played + ' holes (' + dec(s.faults / s.played * 18) + ' per 18)' }; });
+    var sp = trs.map(function (r) { var s = roundStats(r); return { x: fmtDate(r.date), y: s.score / s.played * 18, tip: fmtDate(r.date, true) + ' · ' + (r.courseName || 'Round') + ' · ' + rel(s.score) + ' in ' + s.played + ' holes (' + relDec(s.score / s.played * 18) + ' per 18)' }; });
+    h += '<div class="section"><div class="cap">Faults per 18, by round</div>' + lineChart('tipF', tp, function (v) { return dec(v, v % 1 ? 1 : 0); }) + '</div>';
+    h += '<div class="section"><div class="cap">Score to par per 18, by round</div>' + lineChart('tipS', sp, function (v) { return v > 0 ? '+' + v : v === 0 ? 'E' : String(v); }) + '</div>';
+  } else if (!opt.round) {
+    h += '<div class="section"><div class="hint">Trends over time appear after two rounds of 9+ holes.</div></div>';
+  }
+
+  // by par
+  var parRows = [3, 4, 5].filter(function (p) { return byPar[p].h; });
+  if (parRows.length) h += '<div class="section"><div class="cap">Faults per hole by par</div><div class="card">' + barsHTML(parRows.map(function (p) { return { label: 'Par ' + p, n: +dec(byPar[p].f / byPar[p].h, 2), sub: byPar[p].h + ' holes' }; })) + '</div></div>';
+
+  // shot type frequency in faults
+  if (faults) {
+    var ST = { tee: 0, app: 0, chip: 0, sand: 0, putt: 0 };
+    holes.forEach(function (x) {
+      var fl = flags(x), seen = {};
+      FAULTS.forEach(function (f) {
+        if (!fl[f.id]) return;
+        if (f.id === 'double' || f.id === 'p5') {
+          ['tee', 'app', 'chip', 'sand'].forEach(function (a) { if (isOn(x, f.id + '.' + a)) seen[a] = 1; });
+          if (fl.putts) seen.putt = 1;
+        } else if (f.id === 'inside') {
+          if (isOn(x, 'inside.why.recovery')) seen.tee = 1;
+          if (isOn(x, 'inside.why.missed')) seen.app = 1;
+          if (isOn(x, 'inside.why.chip')) seen.chip = 1;
+          if (fl.putts || isOn(x, 'inside.why.putts')) seen.putt = 1;
+        } else if (f.id === 'updown') {
+          if (isOn(x, 'updown.chip')) seen.chip = 1;
+          if (isOn(x, 'updown.putt')) seen.putt = 1;
+        } else if (f.id === 'putts') seen.putt = 1;
+      });
+      Object.keys(seen).forEach(function (k) { ST[k]++; });
+    });
+    var stTotal = ST.tee + ST.app + ST.chip + ST.sand + ST.putt;
+    var stRows = [['tee', 'Tee'], ['app', 'App'], ['chip', 'Chip'], ['sand', 'Sand'], ['putt', 'Putts']].map(function (x) {
+      return { label: x[1], n: stTotal ? Math.round(ST[x[0]] / stTotal * 100) : 0, sub: ST[x[0]] + ' of ' + stTotal };
+    });
+    h += '<div class="section"><div class="cap">Shot type frequency in faults</div><div class="card">' + (stTotal ? barsHTML(stRows, { max: 100 }).replace(/(<span class="n">\d+)/g, '$1%') : '<div class="hint">No shot types marked on your faults yet.</div>') + '</div><div class="hint">Each shot type\u2019s share of all the shots marked across your faults. Each shot type counts once per hole, however many faults it fed.</div></div>';
+  }
+
+  // trouble holes
+  if (trouble) {
+    var th = Object.keys(holeKey).map(function (k) { return holeKey[k]; }).filter(function (x) { return x.f; }).sort(function (a, b) { return b.f / b.plays - a.f / a.plays || b.plays - a.plays; }).slice(0, 5);
+    if (th.length) h += '<div class="section"><div class="cap">Trouble holes here</div><div class="card">' + barsHTML(th.map(function (x) { return { label: 'Hole ' + x.n + (x.par ? ' · par ' + x.par : ''), n: +dec(x.f / x.plays, 2), sub: x.plays + ' play' + (x.plays === 1 ? '' : 's') + ' · ' + relDec(x.s / x.plays) }; })) + '</div><div class="hint">Faults per time played.</div></div>';
+  }
+
+  // causes
+  var cs = FAULTS.filter(function (f) { return byFault[f.id]; }).map(function (f) { return causeSection(f, C, byFault[f.id]); }).join('');
+  if (cs) h += '<div class="section"><div class="cap">What’s causing them</div>' + cs + '</div>';
+  return h;
+}
+
+/* ---------------- settings ---------------- */
+function screenSettings() {
+  var S = db.settings;
+  var h = '<header class="topbar"><div class="title">Settings</div></header>';
+  h += '<div class="section"><div class="cap">Course data</div><div class="card stack"><div class="field"><label for="apiKey">GolfCourseAPI key</label><input id="apiKey" class="input" type="password" autocomplete="off" spellcheck="false" data-input="apiKey" value="' + esc(S.apiKey) + '" placeholder="Paste your key"></div>' +
+    '<div class="hint">Get a free key at <a href="https://golfcourseapi.com" target="_blank" rel="noopener">golfcourseapi.com</a>. The free plan allows a limited number of lookups per day; courses you load are saved here and don’t use lookups again. Your key stays on this device.</div>' +
+    '<button class="btn block" data-act="testKey"' + (S.apiKey ? '' : ' disabled') + '>' + (ui.busy === 'test' ? '<span class="spin"></span>' : 'Test key') + '</button>' +
+    '<div class="hint">' + Object.keys(db.courses).length + ' saved course' + (Object.keys(db.courses).length === 1 ? '' : 's') + (Object.keys(db.courses).length ? ' · <button class="chip" data-act="clearCourses" style="height:32px">Clear saved courses</button>' : '') + '</div></div></div>';
+  h += '<div class="section"><div class="cap">Backup &amp; sync</div><div class="card stack"><div class="field"><label for="gistToken">GitHub token</label><input id="gistToken" class="input" type="password" autocomplete="off" spellcheck="false" data-input="gistToken" value="' + esc(S.gistToken) + '" placeholder="Token with gist scope"></div>' +
+    '<div class="field"><label for="gistId">Gist ID</label><input id="gistId" class="input" autocomplete="off" spellcheck="false" data-input="gistId" value="' + esc(S.gistId) + '" placeholder="Created on first sync"></div>' +
+    '<div class="hint">Rounds are saved to a private (secret) Gist. Use the same token and Gist ID on another device to sync. Your API key and token are never uploaded. ' + (S.lastSync ? 'Last synced ' + esc(new Date(S.lastSync).toLocaleString()) + '.' : 'Not synced yet.') + '</div>' +
+    '<button class="btn primary block" data-act="sync"' + (S.gistToken ? '' : ' disabled') + '>' + (ui.busy === 'sync' ? '<span class="spin" style="border-top-color:#fff"></span>' : 'Sync now') + '</button></div></div>';
+  h += '<div class="section"><div class="cap">Your data</div><div class="card stack"><div class="hint">' + db.rounds.length + ' round' + (db.rounds.length === 1 ? '' : 's') + ' stored on this device.</div><div class="seg" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button data-act="export">Export file</button><button data-act="import">Import file</button></div><button class="btn danger block" data-act="wipe">Delete all rounds</button></div></div>';
+  return h + tabs('settings');
+}
+
+/* ---------------- sync ---------------- */
+function portable() { return { v: 1, exportedAt: now(), rounds: db.rounds, deleted: db.deleted, courses: db.courses }; }
+function mergeIn(other) {
+  if (!other || typeof other !== 'object') throw new Error('That file doesn’t look like Faults data.');
+  var del = Object.assign({}, db.deleted);
+  Object.keys(other.deleted || {}).forEach(function (k) { if (!del[k] || other.deleted[k] > del[k]) del[k] = other.deleted[k]; });
+  var map = {};
+  db.rounds.concat(other.rounds || []).forEach(function (r) {
+    if (!r || !r.id || !Array.isArray(r.holes)) return;
+    var cur = map[r.id];
+    if (!cur || (r.updatedAt || '') > (cur.updatedAt || '')) map[r.id] = r;
+  });
+  db.rounds = Object.keys(map).map(function (k) { return map[k]; }).filter(function (r) { return !(del[r.id] && del[r.id] >= (r.updatedAt || '')); });
+  db.deleted = del;
+  Object.keys(other.courses || {}).forEach(function (k) { if (!db.courses[k]) db.courses[k] = other.courses[k]; });
+  if (db.activeId && !roundById(db.activeId)) db.activeId = null;
+  save();
+}
+function gh(path, opts) {
+  opts = opts || {};
+  opts.headers = Object.assign({ Authorization: 'Bearer ' + db.settings.gistToken.trim(), Accept: 'application/vnd.github+json' }, opts.headers || {});
+  return fetch('https://api.github.com' + path, opts).then(function (r) {
+    if (r.status === 401) throw new Error('GitHub rejected the token.');
+    if (r.status === 404) throw new Error('Gist not found. Check the Gist ID, or clear it to create a new one.');
+    if (!r.ok) throw new Error('GitHub error (' + r.status + ').');
+    return r.json();
+  }, function () { throw new Error('Couldn’t reach GitHub. Check your connection.'); });
+}
+function syncNow(quiet) {
+  var S = db.settings;
+  if (!S.gistToken) return Promise.reject(new Error('Add a GitHub token first.'));
+  var id = (S.gistId || '').trim();
+  var pull = id ? gh('/gists/' + id).then(function (g) {
+    var f = g.files && g.files[GIST_FILE];
+    if (!f) return null;
+    if (f.truncated && f.raw_url) return fetch(f.raw_url).then(function (r) { return r.json(); });
+    return JSON.parse(f.content || 'null');
+  }) : Promise.resolve(null);
+  return pull.then(function (remote) {
+    if (remote) mergeIn(remote);
+    var body = JSON.stringify({ description: 'Faults golf app backup', files: (function () { var o = {}; o[GIST_FILE] = { content: JSON.stringify(portable()) }; return o; })() });
+    if (id) return gh('/gists/' + id, { method: 'PATCH', body: body });
+    var b = JSON.parse(body); b.public = false;
+    return gh('/gists', { method: 'POST', body: JSON.stringify(b) });
+  }).then(function (g) {
+    if (g && g.id) S.gistId = g.id;
+    S.lastSync = now(); save();
+    if (!quiet) toast('Synced ' + db.rounds.length + ' round' + (db.rounds.length === 1 ? '' : 's') + '.');
+  });
+}
+
+/* ---------------- actions ---------------- */
+function curRound() { return roundById(ui.roundId); }
+function curHole() { var r = curRound(); return r ? r.holes[r.cur || 0] : null; }
+function holeChanged() { touch(curRound()); render(); }
+function openCourse(c) {
+  var S = ui.setup;
+  S.course = c;
+  try { c._usedAt = now(); cacheCourse(c); } catch (e) { /* caching is optional */ }
+  S.step = 'tees'; render(); window.scrollTo(0, 0);
+}
+var ACTIONS = {
+  tab: function (d) { go(d.s); },
+  newRound: function () { go('setup', { setup: { step: 'search', query: '', results: null, loading: false, error: '', course: null, tee: null, side: '18', date: todayISO(), manualName: '' } }); },
+  resume: function () { go('hole', { roundId: db.activeId }); },
+  openRound: function (d) { var r = roundById(d.id); if (!r) return; if (!r.finished) { db.activeId = r.id; save(); go('hole', { roundId: r.id }); } else go('summary', { roundId: r.id, view: 'insights', from: ui.screen === 'home' ? 'home' : 'rounds' }); },
+  setupBack: function () {
+    var S = ui.setup;
+    if (S.step === 'side') { S.step = S.course && normTees(S.course).length ? 'tees' : 'search'; render(); }
+    else if (S.step === 'tees') { S.step = 'search'; render(); }
+    else go('home');
+  },
+  search: function () {
+    var qEl = document.getElementById('q');
+    if (qEl && qEl.blur) qEl.blur();
+    var S = ui.setup, q = (qEl || {}).value || '';
+    S.query = q.trim();
+    if (!S.query) { S.error = 'Type a course or club name.'; render(); return; }
+    S.loading = true; S.error = ''; render();
+    apiGet('/search?search_query=' + encodeURIComponent(S.query)).then(function (data) {
+      S.results = (data && (data.courses || data.results)) || [];
+    }).catch(function (e) { S.error = e.message; S.results = null; }).then(function () { S.loading = false; if (ui.screen === 'setup') render(); });
+  },
+  pickResult: function (d) {
+    var S = ui.setup, c = S.results && S.results[+d.i];
+    if (!c) return;
+    var tees = normTees(c);
+    var complete = tees.length && tees.every(function (t) { return t.holes.length; });
+    if (complete || c.id == null) { openCourse(c); return; }
+    S.loading = true; S.error = ''; render();
+    apiGet('/courses/' + encodeURIComponent(c.id)).then(function (data) {
+      var full = (data && data.course) || data;
+      S.loading = false;
+      openCourse(full && typeof full === 'object' && normTees(full).length ? full : c);
+    }).catch(function (e) {
+      S.loading = false;
+      if (tees.length) { openCourse(c); toast('Loaded tees without hole details: ' + e.message); }
+      else { S.error = e.message; render(); }
+    });
+  },
+  pickCached: function (d) { var c = db.courses[d.id]; if (c) openCourse(c); },
+  manual: function () { var S = ui.setup; S.manualName = ((document.getElementById('manualName') || {}).value || '').trim(); S.course = null; S.tee = null; S.side = '18'; S.step = 'side'; render(); },
+  noTees: function () { var S = ui.setup; S.manualName = courseTitle(S.course); S.tee = null; S.step = 'side'; render(); },
+  pickTee: function (d) { var S = ui.setup; S.tee = normTees(S.course).filter(function (t) { return t.key === d.k; })[0]; S.side = S.tee && S.tee.holes.length < 18 ? 'front' : '18'; S.step = 'side'; render(); window.scrollTo(0, 0); },
+  pickSide: function (d) { ui.setup.side = d.v; render(); },
+  startRound: function () {
+    var S = ui.setup, dEl = document.getElementById('rdate');
+    var nums = S.side === 'front' ? range(1, 9) : S.side === 'back' ? range(10, 18) : range(1, 18);
+    var tee = S.tee;
+    var r = {
+      id: uid(), createdAt: now(), updatedAt: now(), date: (dEl && dEl.value) || todayISO(),
+      courseId: S.course && S.course.id != null ? S.course.id : null,
+      courseName: S.course ? courseTitle(S.course) : (S.manualName || 'Round'),
+      teeName: tee ? tee.name : '', teeGender: tee ? tee.gender : '', side: S.side,
+      holes: nums.map(function (n) { return blankHole(n, tee ? tee.holes[n - 1] : null); }),
+      cur: 0, finished: false
+    };
+    db.rounds.push(r); db.activeId = r.id; save();
+    go('hole', { roundId: r.id });
+  },
+  score: function (d) {
+    var h = curHole(), v = +d.v;
+    if (v === 3 && !d.exact && h.delta >= 3) return;
+    setDelta(h, v); holeChanged();
+  },
+  fault: function (d) { toggleFault(curHole(), d.f); holeChanged(); },
+  sel: function (d) {
+    var h = curHole(), k = d.k;
+    materialize(h, k);
+    if (h.sel[k]) clearPrefix(h.sel, k); else h.sel[k] = true;
+    holeChanged();
+  },
+  one: function (d) {
+    var h = curHole(), k = d.k;
+    materialize(h, k);
+    if (h.sel[k] === d.v) delete h.sel[k]; else h.sel[k] = d.v;
+    holeChanged();
+  },
+  reset: function () { var h = curHole(); h.delta = 0; h.f = {}; h.sel = {}; h.p5Linked = false; holeChanged(); },
+  goHole: function (d) { var r = curRound(); r.cur = +d.i; touch(r); render(); window.scrollTo(0, 0); },
+  prevHole: function () { var r = curRound(); if (r.cur > 0) { r.cur--; touch(r); render(); window.scrollTo(0, 0); } },
+  nextHole: function () { var r = curRound(); if (r.cur < r.holes.length - 1) { r.cur++; touch(r); render(); window.scrollTo(0, 0); } },
+  finish: function () {
+    var r = curRound();
+    r.finished = true; if (db.activeId === r.id) db.activeId = null; touch(r);
+    go('summary', { roundId: r.id, view: 'insights', from: 'home' });
+    if (db.settings.gistToken) syncNow(true).then(function () { toast('Round saved and backed up.'); }, function () { toast('Round saved. Backup will retry next sync.'); });
+    else toast('Round saved.');
+  },
+  exitRound: function () { var r = curRound(); if (r && !r.finished) { db.activeId = r.id; save(); go('home'); } else go('summary', { roundId: r.id }); },
+  editRound: function () { var r = curRound(); if (!r.finished) db.activeId = r.id; r.cur = 0; save(); go('hole', { roundId: r.id }); },
+  deleteRound: function () {
+    var r = curRound();
+    if (!r || !confirm('Delete this round? This can’t be undone.')) return;
+    db.deleted[r.id] = now(); db.rounds = db.rounds.filter(function (x) { return x.id !== r.id; });
+    if (db.activeId === r.id) db.activeId = null;
+    save(); go('rounds'); toast('Round deleted.');
+  },
+  view: function (d) { ui.view = d.v; render(); },
+  insRange: function (d) { ui.ins.range = d.v === 'all' ? 'all' : +d.v; render(); },
+  testKey: function () {
+    ui.busy = 'test'; render();
+    apiGet('/search?search_query=' + encodeURIComponent('pebble beach')).then(function (data) {
+      var n = ((data && data.courses) || []).length; toast(n ? 'Key works.' : 'Key accepted, but the test search returned nothing.');
+    }).catch(function (e) { toast(e.message); }).then(function () { ui.busy = false; render(); });
+  },
+  clearCourses: function () { if (confirm('Clear saved course data? Rounds keep their pars.')) { db.courses = {}; save(); render(); } },
+  sync: function () {
+    ui.busy = 'sync'; render();
+    syncNow(false).catch(function (e) { toast(e.message); }).then(function () { ui.busy = false; render(); });
+  },
+  export: function () {
+    var blob = new Blob([JSON.stringify(portable(), null, 1)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'faults-backup-' + todayISO() + '.json';
+    document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  },
+  import: function () { document.getElementById('importFile').click(); },
+  wipe: function () {
+    if (!confirm('Delete every round on this device?')) return;
+    if (!confirm('Really delete all rounds? If you sync afterwards, they will be removed from your Gist too.')) return;
+    db.rounds.forEach(function (r) { db.deleted[r.id] = now(); });
+    db.rounds = []; db.activeId = null; save(); render(); toast('All rounds deleted.');
+  }
+};
+
+/* ---------------- events ---------------- */
+app.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-act]');
+  if (!b || b.disabled) return;
+  var fn = ACTIONS[b.getAttribute('data-act')];
+  if (!fn) return;
+  e.preventDefault();
+  var ae = document.activeElement;
+  if (ae && ae !== b && ae.blur && (ae.tagName === 'INPUT' || ae.tagName === 'SELECT')) ae.blur();
+  try { fn(b.dataset, b); }
+  catch (err) { console.error(err); toast('Something went wrong: ' + (err && err.message || err)); }
+});
+app.addEventListener('change', function (e) {
+  var t = e.target, k = t.getAttribute && t.getAttribute('data-input');
+  if (!k) return;
+  if (k === 'insCourse') { ui.ins.course = t.value; render(); return; }
+  if (k === 'apiKey' || k === 'gistToken' || k === 'gistId') { db.settings[k] = t.value.trim(); save(); render(); }
+});
+app.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && e.target.id === 'q') { e.preventDefault(); ACTIONS.search(); }
+});
+app.addEventListener('input', function (e) {
+  if (e.target.id === 'q' && ui.setup) ui.setup.query = e.target.value;
+  if (e.target.id === 'manualName' && ui.setup) ui.setup.manualName = e.target.value;
+});
+function showTip(e) {
+  var t = e.target.closest && e.target.closest('[data-tip]');
+  if (!t) return;
+  var box = document.getElementById(t.getAttribute('data-tipfor'));
+  if (box) box.textContent = t.getAttribute('data-tip');
+}
+app.addEventListener('pointerover', showTip);
+app.addEventListener('click', showTip);
+document.getElementById('importFile').addEventListener('change', function (e) {
+  var f = e.target.files && e.target.files[0];
+  if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function () {
+    try { var before = db.rounds.length; mergeIn(JSON.parse(rd.result)); toast('Imported. ' + db.rounds.length + ' rounds (' + (db.rounds.length - before) + ' new).'); render(); }
+    catch (err) { toast(err.message || 'Could not read that file.'); }
+    e.target.value = '';
+  };
+  rd.readAsText(f);
+});
+
+/* ---------------- render ---------------- */
+var SCREENS = { home: screenHome, setup: screenSetup, hole: screenHole, summary: screenSummary, rounds: screenRounds, insights: screenInsights, settings: screenSettings };
+function render() {
+  var y = window.scrollY;
+  app.innerHTML = (SCREENS[ui.screen] || screenHome)();
+  window.scrollTo(0, y);
+}
+render();
+if (navigator.storage && navigator.storage.persist) { try { navigator.storage.persist().catch(function () {}); } catch (e) { /* optional */ } }
+window.addEventListener('error', function (e) { toast('Something went wrong: ' + (e.message || 'unknown error')); });
+window.addEventListener('unhandledrejection', function (e) { var m = e.reason && e.reason.message; toast('Something went wrong: ' + (m || 'unknown error')); });
+window.__faults ={ db: function () { return db; }, ui: ui, ACTIONS: ACTIONS, render: render };
+})();
+</script>
+</body>
+</html>

@@ -204,6 +204,8 @@ a{color:var(--green)}
 .st td.tot{font-weight:700;background:var(--panel)}
 .st td.tot small{display:block;font-size:10px;font-weight:500;color:var(--muted)}
 .st tr.foot th,.st tr.foot td{border-top:2px solid var(--rule);font-weight:700}
+.addbtn{height:40px;border-radius:12px;border:1px dashed var(--orange-line);background:transparent;color:var(--orange-ink);font-weight:600;font-size:13px}
+.linkbtn{border:none;background:none;color:var(--orange-ink);font-size:12px;font-weight:600;text-decoration:underline;padding:6px 0;min-height:32px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(110px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.18)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .spin{display:inline-block;width:16px;height:16px;border:2px solid var(--rule);border-top-color:var(--ink);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px}
@@ -328,13 +330,25 @@ function roundById(id) { for (var i = 0; i < db.rounds.length; i++) if (db.round
 /* ---------------- hole logic ---------------- */
 // Counting rules: Penalty/Recovery once per shot (Tee/App/Chip/Sand) with a miss type picked;
 // Scoring approach only when Missed; Two chip and Three putt once per hole.
+var MAX_SHOTS = 3;
+var ORD = ['', '1st', '2nd', '3rd'];
+// keys for each logged attempt of a shot type: trouble.tee, trouble.tee2, trouble.tee3
+function instKeys(h, shot) {
+  var s = h.sel || {}, base = 'trouble.' + shot, out = [];
+  if (!s[base]) return out;
+  out.push(base);
+  for (var i = 2; i <= MAX_SHOTS; i++) if (s[base + i]) out.push(base + i);
+  return out;
+}
 function faults(h) {
   var out = [];
   if (!h || h.delta == null) return out;
   var on = h.on || {}, s = h.sel || {};
   if (on.trouble) SHOTS.forEach(function (sh) {
-    var t = s['trouble.' + sh[0]] && s['trouble.' + sh[0] + '.type'];
-    if (t) out.push({ type: t === 'pen' ? 'penalty' : 'recovery', shot: sh[0] });
+    instKeys(h, sh[0]).forEach(function (k) {
+      var t = s[k + '.type'];
+      if (t) out.push({ type: t === 'pen' ? 'penalty' : 'recovery', shot: sh[0] });
+    });
   });
   if (on.app150 && s['app150.green'] === 'miss') out.push({ type: 'scoring' });
   if (on.twochip) out.push({ type: 'twochip' });
@@ -360,15 +374,16 @@ function rowSummary(h, id) {
   var s = h.sel, bits = [];
   if (id === 'trouble') {
     SHOTS.forEach(function (sh) {
-      var k = 'trouble.' + sh[0];
-      if (!s[k]) return;
-      var parts = [sh[1]];
+      var ks = instKeys(h, sh[0]);
+      ks.forEach(function (k, idx) {
+      var parts = [sh[1] + (ks.length > 1 ? ' ' + ORD[idx + 1] : '')];
       var ds = dirsOf(h, k).map(function (d) { return DIRW[d]; });
       if (ds.length) parts.push(ds.join('/'));
       if (s[k + '.type']) parts.push(s[k + '.type'] === 'pen' ? 'penalty' : 'recovery');
       var sh2 = SHAPES.filter(function (x) { return s[k + '.' + x[0]]; }).map(function (x) { return x[1].toLowerCase(); });
       if (sh2.length) parts.push(sh2.join('/'));
       bits.push(parts.join(' '));
+      });
     });
   } else if (id === 'app150') {
     if (s['app150.green']) bits.push(labelOf(GREEN, s['app150.green']));
@@ -556,9 +571,15 @@ function panelFor(h, id) {
       return '<button class="chip dark' + (on ? ' on' : '') + '" data-act="sel" data-k="' + k + '" aria-pressed="' + on + '">' + sh[1] + '</button>';
     }).join('') + '</div></div>';
     SHOTS.forEach(function (sh) {
-      var k = 'trouble.' + sh[0];
-      if (!h.sel[k]) return;
-      out += sect(sh[1] + ' · miss direction and type', '<div class="srow">' + padHTML(h, k) + '<div class="opts">' + oneChips(h, k + '.type', TYPES) + DIVIDER + '<div class="g3">' + multiChips(h, k, SHAPES) + '</div></div></div>');
+      var ks = instKeys(h, sh[0]);
+      if (!ks.length) return;
+      ks.forEach(function (k, idx) {
+        var multi = ks.length > 1, last = idx === ks.length - 1;
+        var title = sh[1] + (multi ? ' · ' + ORD[idx + 1] + ' shot' : '') + ' · miss direction and type';
+        var rm = idx > 0 && last ? '<button class="linkbtn" data-act="removeShot" data-k="' + k + '" aria-label="Remove ' + ORD[idx + 1] + ' ' + sh[1].toLowerCase() + ' shot">Remove</button>' : '';
+        out += '<div class="sect"><div class="row between"><div class="slabel">' + title + '</div>' + rm + '</div><div class="srow">' + padHTML(h, k) + '<div class="opts">' + oneChips(h, k + '.type', TYPES) + DIVIDER + '<div class="g3">' + multiChips(h, k, SHAPES) + '</div></div></div></div>';
+      });
+      if (ks.length < MAX_SHOTS) out += '<button class="addbtn" data-act="addShot" data-s="' + sh[0] + '">+ Add ' + ORD[ks.length + 1] + ' ' + sh[1].toLowerCase() + ' shot</button>';
     });
   } else if (id === 'app150') {
     out += sect('Miss direction, result and distance', '<div class="srow">' + padHTML(h, 'app150') + '<div class="opts">' + oneChips(h, 'app150.green', GREEN) + DIVIDER + '<div class="g1">' + oneChips(h, 'app150.dist', APP_DIST) + '</div></div></div>', true);
@@ -683,13 +704,15 @@ function collect(holes) {
   holes.forEach(function (h) {
     var s = h.sel || {}, on = h.on || {};
     if (on.trouble) SHOTS.forEach(function (sh) {
-      var k = 'trouble.' + sh[0], t = s[k] && s[k + '.type'];
-      if (!t) return;
-      var T = C[t === 'pen' ? 'penalty' : 'recovery'];
-      T.n++; addHole(T, h);
-      var S = T.shots[sh[0]] || (T.shots[sh[0]] = blankGroup());
-      S.n++; addHole(S, h); bumpDirs(S, h, k);
-      SHAPES.forEach(function (x) { if (s[k + '.' + x[0]]) S.shapes[x[0]] = (S.shapes[x[0]] || 0) + 1; });
+      instKeys(h, sh[0]).forEach(function (k) {
+        var t = s[k + '.type'];
+        if (!t) return;
+        var T = C[t === 'pen' ? 'penalty' : 'recovery'];
+        T.n++; addHole(T, h);
+        var S = T.shots[sh[0]] || (T.shots[sh[0]] = blankGroup());
+        S.n++; addHole(S, h); bumpDirs(S, h, k);
+        SHAPES.forEach(function (x) { if (s[k + '.' + x[0]]) S.shapes[x[0]] = (S.shapes[x[0]] || 0) + 1; });
+      });
     });
     if (on.app150 && s['app150.green']) {
       var A = C.scoring;
@@ -1094,9 +1117,19 @@ var ACTIONS = {
   },
   sel: function (d) {
     var h = curHole(), k = d.k;
-    if (h.sel[k]) clearPrefix(h.sel, k); else h.sel[k] = true;
+    if (h.sel[k]) {
+      clearPrefix(h.sel, k);
+      if (/^trouble\.(tee|app|chip|sand)$/.test(k)) for (var i = 2; i <= MAX_SHOTS; i++) clearPrefix(h.sel, k + i);
+    } else h.sel[k] = true;
     holeChanged();
   },
+  addShot: function (d) {
+    var h = curHole(), ks = instKeys(h, d.s);
+    if (!ks.length || ks.length >= MAX_SHOTS) return;
+    h.sel['trouble.' + d.s + (ks.length + 1)] = true;
+    holeChanged();
+  },
+  removeShot: function (d) { var h = curHole(); clearPrefix(h.sel, d.k); holeChanged(); },
   one: function (d) {
     var h = curHole(), k = d.k;
     if (h.sel[k] === d.v) delete h.sel[k]; else h.sel[k] = d.v;

@@ -163,6 +163,16 @@ a{color:var(--green)}
 .filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .filters .chip.on{background:var(--ink);border-color:var(--ink)}
 .select{height:40px;border:1px solid var(--rule);border-radius:20px;background:#fff;padding:0 12px;font-size:13px;max-width:100%}
+.pie{display:flex;align-items:center;gap:16px}
+.pie svg{flex:none}
+.legend{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.lg{display:grid;grid-template-columns:12px minmax(0,1fr) auto;column-gap:8px;align-items:center;font-size:14px}
+.lg .sw{width:12px;height:12px;border-radius:3px}
+.lg .ll{font-weight:500}
+.lg .lp{font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.lg .lc{grid-column:2 / 4;font-size:11px;color:var(--muted);margin-top:-2px}
+.lg.z{opacity:.45}
+.card .tip{font-size:12px;color:var(--muted);min-height:18px;margin-top:8px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(110px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:50;max-width:calc(100% - 32px);box-shadow:0 6px 20px rgba(0,0,0,.18)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .spin{display:inline-block;width:16px;height:16px;border:2px solid var(--rule);border-top-color:var(--ink);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-3px}
@@ -313,11 +323,31 @@ function setDelta(h, v) {
     }
   });
   if (!before.p5 && after.p5) h.p5Linked = true;
+  syncSave(h);
 }
 function toggleFault(h, id) {
   h.f[id] = !h.f[id];
   if (!h.f[id]) { clearPrefix(h.sel, id); if (id === 'p5') h.p5Linked = false; }
   else if (id === 'p5') h.p5Linked = true;
+  if (id === 'updown') { h.updownAuto = false; h.mirChip = false; h.mirPutt = false; }
+  if (id === 'inside') syncSave(h);
+}
+function syncSave(h) {
+  var ins = !!flags(h).inside;
+  var chip = ins && !!h.sel['inside.why.chip'], putt = ins && !!h.sel['inside.why.putts'];
+  var prevChip = !!h.mirChip, prevPutt = !!h.mirPutt;
+  if ((chip || putt) && !h.f.updown) { h.f.updown = true; h.updownAuto = true; }
+  if (chip) {
+    h.sel['updown.chip'] = true;
+    clearPrefix(h.sel, 'updown.chip.dir');
+    DIRS.forEach(function (d) { if (h.sel['inside.why.chip.dir.' + d[0]]) h.sel['updown.chip.dir.' + d[0]] = true; });
+  } else if (prevChip) clearPrefix(h.sel, 'updown.chip');
+  if (putt) h.sel['updown.putt'] = true;
+  else if (prevPutt) clearPrefix(h.sel, 'updown.putt');
+  h.mirChip = chip; h.mirPutt = putt;
+  if (!chip && !putt && (prevChip || prevPutt) && h.updownAuto && !h.sel['updown.chip'] && !h.sel['updown.putt']) {
+    h.f.updown = false; h.updownAuto = false; clearPrefix(h.sel, 'updown');
+  }
 }
 function visit(h) { if (h.delta == null) { h.delta = 0; } }
 function blankHole(n, th) {
@@ -483,6 +513,7 @@ function padHTML(h, k) {
 function panelHTML(h, fid, tree, fl) {
   var out = '';
   if (fid === 'p5' && linkedP5(h)) out += '<div class="note">Matching your double answers · tap any to change just this one</div>';
+  if (fid === 'updown' && (h.mirChip || h.mirPutt)) out += '<div class="note">Filled in from your scoring-club answers</div>';
   if (tree.mode === 'pick') {
     out += '<div class="grp"><div class="plabel">' + tree.prompt + '</div><div class="l1">';
     tree.items.forEach(function (it) {
@@ -727,6 +758,26 @@ function causeSection(f, C, total) {
   }
   return '<div class="sub"><div class="subh"><span class="t">' + f.title + '</span><span class="hint">' + total + ' time' + (total === 1 ? '' : 's') + '</span></div>' + out + '</div>';
 }
+var PIE_COLORS = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4'];
+function pieHTML(rows, total, id) {
+  var cx = 70, cy = 70, R = 66, a0 = -Math.PI / 2, svg = '';
+  var live = rows.map(function (r, i) { return { label: r[0], n: r[1], color: PIE_COLORS[i] }; });
+  var nz = live.filter(function (r) { return r.n; });
+  nz.forEach(function (r) {
+    var frac = r.n / total, a1 = a0 + frac * Math.PI * 2;
+    var tip = r.label + ': ' + Math.round(frac * 100) + '% (' + r.n + ' of ' + total + ')';
+    if (nz.length === 1) svg += '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="' + r.color + '" data-tip="' + esc(tip) + '" data-tipfor="' + id + '"></circle>';
+    else {
+      var x0 = cx + R * Math.cos(a0), y0 = cy + R * Math.sin(a0), x1 = cx + R * Math.cos(a1), y1 = cy + R * Math.sin(a1);
+      svg += '<path d="M' + cx + ' ' + cy + ' L' + x0.toFixed(2) + ' ' + y0.toFixed(2) + ' A' + R + ' ' + R + ' 0 ' + (frac > 0.5 ? 1 : 0) + ' 1 ' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' Z" fill="' + r.color + '" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round" data-tip="' + esc(tip) + '" data-tipfor="' + id + '" style="cursor:pointer"></path>';
+    }
+    a0 = a1;
+  });
+  var legend = live.map(function (r) {
+    return '<div class="lg' + (r.n ? '' : ' z') + '"><span class="sw" style="background:' + r.color + '"></span><span class="ll">' + r.label + '</span><span class="lp">' + Math.round(r.n / total * 100) + '%</span><span class="lc">' + r.n + ' of ' + total + '</span></div>';
+  }).join('');
+  return '<div class="pie"><svg viewBox="0 0 140 140" width="140" height="140" role="img" aria-label="' + esc(live.map(function (r) { return r.label + ' ' + Math.round(r.n / total * 100) + '%'; }).join(', ')) + '">' + svg + '</svg><div class="legend">' + legend + '</div></div><div class="tip" id="' + id + '">Tap a slice for details</div>';
+}
 function niceStep(raw) { var p = Math.pow(10, Math.floor(Math.log10(raw || 1))); var m = raw / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
 function lineChart(id, pts, yLabelFmt) {
   var W = 340, H = 180, L = 36, R = 12, T = 12, B = 28;
@@ -858,7 +909,7 @@ function insightsBody(rs, opt) {
     var stRows = [['tee', 'Tee'], ['app', 'App'], ['chip', 'Chip'], ['sand', 'Sand'], ['putt', 'Putts']].map(function (x) {
       return { label: x[1], n: stTotal ? Math.round(ST[x[0]] / stTotal * 100) : 0, sub: ST[x[0]] + ' of ' + stTotal };
     });
-    h += '<div class="section"><div class="cap">Shot type frequency in faults</div><div class="card">' + (stTotal ? barsHTML(stRows, { max: 100 }).replace(/(<span class="n">\d+)/g, '$1%') : '<div class="hint">No shot types marked on your faults yet.</div>') + '</div><div class="hint">Each shot type\u2019s share of all the shots marked across your faults. Each shot type counts once per hole, however many faults it fed.</div></div>';
+    h += '<div class="section"><div class="cap">Shot type frequency in faults</div><div class="card">' + (stTotal ? pieHTML([['Tee', ST.tee], ['App', ST.app], ['Chip', ST.chip], ['Sand', ST.sand], ['Putts', ST.putt]], stTotal, opt.round ? 'pieR' : 'pieA') : '<div class="hint">No shot types marked on your faults yet.</div>') + '</div><div class="hint">Each shot type\u2019s share of all the shots marked across your faults. Each shot type counts once per hole, however many faults it fed.</div></div>';
   }
 
   // trouble holes
@@ -1019,6 +1070,7 @@ var ACTIONS = {
     var h = curHole(), k = d.k;
     materialize(h, k);
     if (h.sel[k]) clearPrefix(h.sel, k); else h.sel[k] = true;
+    if (k.indexOf('inside.why.') === 0) syncSave(h);
     holeChanged();
   },
   one: function (d) {
@@ -1027,7 +1079,7 @@ var ACTIONS = {
     if (h.sel[k] === d.v) delete h.sel[k]; else h.sel[k] = d.v;
     holeChanged();
   },
-  reset: function () { var h = curHole(); h.delta = 0; h.f = {}; h.sel = {}; h.p5Linked = false; holeChanged(); },
+  reset: function () { var h = curHole(); h.delta = 0; h.f = {}; h.sel = {}; h.p5Linked = false; h.mirChip = h.mirPutt = h.updownAuto = false; holeChanged(); },
   goHole: function (d) { var r = curRound(); r.cur = +d.i; touch(r); render(); window.scrollTo(0, 0); },
   prevHole: function () { var r = curRound(); if (r.cur > 0) { r.cur--; touch(r); render(); window.scrollTo(0, 0); } },
   nextHole: function () { var r = curRound(); if (r.cur < r.holes.length - 1) { r.cur++; touch(r); render(); window.scrollTo(0, 0); } },
